@@ -28,6 +28,56 @@ async function acceptBytes(bytes){if(busy)return;busy=true;$("addA").disabled=$(
 async function addFixture(key){const f=FIXTURES[key];try{const r=await fetch(f.file,{cache:"default"});if(!r.ok)throw new Error("Не удалось открыть учебный PDF");await acceptBytes(await r.arrayBuffer())}catch(e){good("Не удалось открыть учебный PDF: "+e.message,true)}}
 function base64(bytes){const a=new Uint8Array(bytes);let b="";for(let i=0;i<a.length;i+=4096)b+=String.fromCharCode(...a.slice(i,i+4096));return btoa(b)}
 async function exportBackup(){try{const docs=[];for(const r of validRows){const state=await classify(r);if(!state.ok)throw new Error("Целостность изменилась");docs.push({id:r.id,sha256:r.sha256,sourceEncoding:r.sourceEncoding,bytesBase64:base64(r.sourceBytes),syntheticOnly:true})}const data={format:"PAE06-CP082-SYNTHETIC-EXPORT-ONLY",version:1,clinicalAuthority:false,docs};const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="PAE06_CP082_SYNTHETIC_EXPORT.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);good("Учебная копия сформирована. Проверьте загрузки iPhone. Восстановление в этой версии отключено.")}catch(e){good("Экспорт не выполнен: "+e.message,true)}}
+
+/* CP08.7: identifiers reflect the LOADED JS, not the server's newest release. */
+const RUNTIME_BUILD=Object.freeze({version:"v0.8.7-test.1",checkpoint:"CP08.7",buildId:"20261118-01",channel:"TEST"});
+let versionCheckBusy=false,lastVersionCheck=0;
+function paintRuntimeBuild(){
+ $("versionText").textContent=`TEST ${RUNTIME_BUILD.version} · ${RUNTIME_BUILD.checkpoint}`;
+ $("buildText").textContent=`Сборка ${RUNTIME_BUILD.buildId} · фактически загруженный код`;
+ if(document.documentElement.dataset.pwaBuild!==RUNTIME_BUILD.buildId){
+  $("versionState").textContent="ВНИМАНИЕ: HTML и JS разных сборок. Не оценивайте эту версию.";
+  $("versionState").dataset.state="mismatch";
+  return false;
+ }
+ return true;
+}
+const latestFields=["app","channel","version","checkpoint","buildId","syntheticOnly"];
+function isReleaseMetadata(value){
+ return value&&typeof value==="object"&&!Array.isArray(value)&&
+  Object.keys(value).length===latestFields.length&&latestFields.every(k=>Object.prototype.hasOwnProperty.call(value,k))&&
+  value.app==="PAE-06 Medical Archive PWA"&&value.channel==="TEST"&&value.syntheticOnly===true&&
+  typeof value.version==="string"&&/^v[0-9]+\.[0-9]+\.[0-9]+-test\.[0-9]+$/.test(value.version)&&
+  typeof value.checkpoint==="string"&&/^CP[0-9]{2}\.[0-9]+$/.test(value.checkpoint)&&
+  typeof value.buildId==="string"&&/^[0-9]{8}-[0-9]{2}$/.test(value.buildId);
+}
+async function checkLatestBuild(){
+ if(versionCheckBusy)return;
+ const state=$("versionState"),btn=$("checkVersion");
+ if(document.documentElement.dataset.pwaBuild!==RUNTIME_BUILD.buildId){
+  state.textContent="HTML и JS от разных сборок. Нужна повторная загрузка приложения.";state.dataset.state="mismatch";return;
+ }
+ if(!navigator.onLine){state.textContent="Офлайн: запущена локальная сборка, актуальность не проверена";state.dataset.state="offline";return;}
+ versionCheckBusy=true;btn.disabled=true;
+ state.textContent="Сверяю версию с TEST-сайтом…";
+ try{
+  // release.json is deliberately excluded from SW precache. Force a fresh network request.
+  const url=new URL("./release.json",location.href);
+  url.searchParams.set("check",String(Date.now()));
+  const response=await fetch(url.href,{cache:"no-store",credentials:"same-origin"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const metadata=await response.json();
+  if(!isReleaseMetadata(metadata))throw new Error("Неверные данные о сборке");
+  const equal=metadata.version===RUNTIME_BUILD.version&&metadata.checkpoint===RUNTIME_BUILD.checkpoint&&metadata.buildId===RUNTIME_BUILD.buildId;
+  state.textContent=equal?"Версия совпадает с TEST-сервером":"Есть другая версия на сервере: "+metadata.version+" · "+metadata.buildId+". Перезапустите PWA без удаления данных.";
+  state.dataset.state=equal?"current":"newer-or-different";
+  lastVersionCheck=Date.now();
+ }catch(err){
+  state.textContent="Не удалось сверить с сервером. Показан номер локальной сборки.";
+  state.dataset.state="unverified";
+ }finally{versionCheckBusy=false;btn.disabled=false;}
+}
+
 function updateNetwork(){$("network").textContent=navigator.onLine?"Локально · онлайн":"Локально · офлайн"}
-async function init(){updateNetwork();window.addEventListener("online",updateNetwork);window.addEventListener("offline",updateNetwork);$("addA").onclick=()=>addFixture("A");$("addB").onclick=()=>addFixture("B");$("file").onchange=async()=>{const f=$("file").files[0];if(f)await acceptBytes(await f.arrayBuffer())};$("search").oninput=()=>refresh(activeId);$("export").onclick=exportBackup;try{await refresh();good("TEST готов: храним только QA-A/QA-B; медицинские данные не принимаются.")}catch(e){good("IndexedDB недоступна: "+e.message,true)}if("serviceWorker" in navigator&&location.protocol==="https:"){try{await navigator.serviceWorker.register("./sw.js",{scope:"./"});await navigator.serviceWorker.ready;$("offline").textContent="Кэш установлен; офлайн требует проверки на устройстве"}catch(e){$("offline").textContent="Сервисный работник не запущен: "+e.message}}else{$("offline").textContent="Офлайн-кэш требует HTTPS и Safari"}}
+async function init(){paintRuntimeBuild();$("checkVersion").onclick=checkLatestBuild;updateNetwork();window.addEventListener("online",()=>{updateNetwork();void checkLatestBuild()});window.addEventListener("focus",()=>{if(Date.now()-lastVersionCheck>60000)void checkLatestBuild()});window.addEventListener("offline",updateNetwork);$("addA").onclick=()=>addFixture("A");$("addB").onclick=()=>addFixture("B");$("file").onchange=async()=>{const f=$("file").files[0];if(f)await acceptBytes(await f.arrayBuffer())};$("search").oninput=()=>refresh(activeId);$("export").onclick=exportBackup;try{await refresh();good("TEST готов: храним только QA-A/QA-B; медицинские данные не принимаются.")}catch(e){good("IndexedDB недоступна: "+e.message,true)}if("serviceWorker" in navigator&&location.protocol==="https:"){try{await navigator.serviceWorker.register("./sw.js",{scope:"./"});await navigator.serviceWorker.ready;$("offline").textContent="Кэш установлен; офлайн требует проверки на устройстве"}catch(e){$("offline").textContent="Сервисный работник не запущен: "+e.message}}else{$("offline").textContent="Офлайн-кэш требует HTTPS и Safari"}void checkLatestBuild()}
 init();
