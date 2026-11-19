@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru" data-pwa-build="20261119-02"><head>
+<html lang="ru" data-pwa-build="20261119-03"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#16385c"><meta name="color-scheme" content="light">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-src blob:; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
@@ -23,5 +23,12 @@
 <div class="macderived-list" id="macDerivedList"></div>
 </details>
 <section class="qafooter"><h3>Проверка на iPhone</h3><p>Откройте приложение, добавьте оба PDF, проверьте 1 и 2 страницы, закройте приложение, откройте снова, затем проверьте офлайн-режим.</p><div class="qaactions"><button id="export" class="secondary">Экспорт учебной копии</button><span id="offline" class="small">Офлайн-кэш ещё не проверен</span></div></section>
-</main><footer>CP08.10 · v0.8.10-test.1 · READ-ONLY PWA TEST · NO REAL DATA · NO CLOUD SYNC</footer></div>
-<script src="catalog.js" defer></script><script src="app.js" defer></script><script type="module" src="mac-preview.mjs"></script></body></html>
+<details class="macbridge" id="macBridge">
+<summary>Mac → PWA · подписанный учебный обмен (Ed25519)</summary>
+<p class="small">Только вымышленные данные. Проверка подписи учебного файла НЕ подтверждает личность настоящего Mac. Используются фиксированные QA-часы; реальные медицинские данные и синхронизация отключены.</p>
+<p id="macBridgeStatus" role="status" class="small">Проверка учебной подписи…</p>
+<div id="macBridgeList" class="macbridge-list"></div>
+</details>
+</main><footer>CP08.11 · v0.8.11-test.1 · READ-ONLY PWA TEST · NO REAL DATA · NO CLOUD SYNC</footer></div>
+<script src="catalog.js" defer></script><script src="app.js" defer></script><script type="module" src="mac-preview.mjs"></script>
+<script type="module" src="mac-bridge-view.mjs"></script></body></html>

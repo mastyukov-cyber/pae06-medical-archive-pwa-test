@@ -1,0 +1,43 @@
+{
+  "schema": "pae06.mac-pwa.synthetic-preview.v0.1",
+  "channel": "TEST",
+  "syntheticOnly": true,
+  "sourceSystem": "PAE06_MAC_SYNTHETIC_QA",
+  "transferId": "SYNTHETIC-TRANSFER-001",
+  "generatedAt": "2026-11-19T09:00:00.000Z",
+  "keyId": "CP0811_QA_EPHEMERAL_01",
+  "cards": [
+    {
+      "sourceDocumentId": "SYNTHETIC_MAC_QA_A",
+      "sourceRevision": 1,
+      "originalSha256": "4e2771233e0ac9b85b6102bea2ef4b80eaa30c79bd54f487316b47f34eb8d153",
+      "previewPageCount": 1,
+      "title": "QA-A · Учебный документ",
+      "documentDate": null,
+      "patientMapping": {
+        "status": "UNVERIFIED",
+        "patientId": null
+      },
+      "reviewStatus": "NOT_REVIEWED",
+      "labStatus": "NOT_CONFIRMED",
+      "readOnly": true
+    },
+    {
+      "sourceDocumentId": "SYNTHETIC_MAC_QA_B",
+      "sourceRevision": 1,
+      "originalSha256": "3e6431cba0304f7480999803b1cc954dd38e582bf172afc38acebc01e3825982",
+      "previewPageCount": 2,
+      "title": "QA-B · Двухстраничный документ",
+      "documentDate": "2026-11-17",
+      "patientMapping": {
+        "status": "UNVERIFIED",
+        "patientId": null
+      },
+      "reviewStatus": "NOT_REVIEWED",
+      "labStatus": "NOT_CONFIRMED",
+      "readOnly": true
+    }
+  ],
+  "payloadSha256": "dbf91127ebeffea406cca4e236e2d955cdcd44b6c87ec5ba6c7d59daa7729155",
+  "signature": "nRDbS7GLA-glxgd5OSF6qp1j-CmJjti17VLkQcya9V2dGIw1IF8XqVk-tPp1j7JFaeY-wqkxYWifYZQMZ1vDAQ"
+}

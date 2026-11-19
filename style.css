@@ -35,3 +35,10 @@
 .macderived-card p{margin:7px 0;line-height:1.45;font-size:13px;color:#496680}
 .macderived-card .macderived-unknown{font-weight:700;color:#925e16}
 .macderived-card code{font-size:11px;overflow-wrap:anywhere;background:#eaf2f7;padding:7px;display:block;border-radius:7px}
+
+/* CP08.11 — mock cryptographic exchange, view only */
+.macbridge{border:1px solid #d4dbe5;border-radius:15px;padding:15px;margin:16px 0;background:#fff}
+.macbridge summary{font-weight:700;color:#1d4362;cursor:pointer}
+.macbridge-list{display:grid;gap:12px;margin-top:12px}
+.macbridge-card{display:grid;gap:6px;border:1px solid #c7dbe8;background:#f7fafc;border-radius:12px;padding:12px;overflow-wrap:anywhere}
+.macbridge-card span{font-size:12px;color:#516b82;line-height:1.5}

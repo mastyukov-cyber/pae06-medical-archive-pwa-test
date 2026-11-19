@@ -1,0 +1,7 @@
+{
+  "profile": "ISOLATED_QA_ONLY",
+  "keyId": "CP0811_QA_EPHEMERAL_01",
+  "rawKeyBase64url": "Tjbin704VR-07iIyFSlLE9zqPNYZx8ziJLsIUqLoydg",
+  "syntheticOnly": true,
+  "notClinicalIdentity": true
+}
