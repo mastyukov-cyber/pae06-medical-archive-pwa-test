@@ -30,7 +30,7 @@ function base64(bytes){const a=new Uint8Array(bytes);let b="";for(let i=0;i<a.le
 async function exportBackup(){try{const docs=[];for(const r of validRows){const state=await classify(r);if(!state.ok)throw new Error("Целостность изменилась");docs.push({id:r.id,sha256:r.sha256,sourceEncoding:r.sourceEncoding,bytesBase64:base64(r.sourceBytes),syntheticOnly:true})}const data={format:"PAE06-CP082-SYNTHETIC-EXPORT-ONLY",version:1,clinicalAuthority:false,docs};const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="PAE06_CP082_SYNTHETIC_EXPORT.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);good("Учебная копия сформирована. Проверьте загрузки iPhone. Восстановление в этой версии отключено.")}catch(e){good("Экспорт не выполнен: "+e.message,true)}}
 
 /* CP08.7: identifiers reflect the LOADED JS, not the server's newest release. */
-const RUNTIME_BUILD=Object.freeze({version:"v0.8.7-test.1",checkpoint:"CP08.7",buildId:"20261118-01",channel:"TEST"});
+const RUNTIME_BUILD=Object.freeze({version:"v0.8.8-test.1",checkpoint:"CP08.8",buildId:"20261118-02",channel:"TEST"});
 let versionCheckBusy=false,lastVersionCheck=0;
 function paintRuntimeBuild(){
  $("versionText").textContent=`TEST ${RUNTIME_BUILD.version} · ${RUNTIME_BUILD.checkpoint}`;
@@ -57,7 +57,7 @@ async function checkLatestBuild(){
  if(document.documentElement.dataset.pwaBuild!==RUNTIME_BUILD.buildId){
   state.textContent="HTML и JS от разных сборок. Нужна повторная загрузка приложения.";state.dataset.state="mismatch";return;
  }
- if(!navigator.onLine){state.textContent="Офлайн: запущена локальная сборка, актуальность не проверена";state.dataset.state="offline";return;}
+ if(!navigator.onLine){expectedUpdate=null;hasDifferentServerRelease=false;$("applyUpdate").hidden=true;state.textContent="Офлайн: запущена локальная сборка, актуальность не проверена";state.dataset.state="offline";return;}
  versionCheckBusy=true;btn.disabled=true;
  state.textContent="Сверяю версию с TEST-сайтом…";
  try{
@@ -71,13 +71,94 @@ async function checkLatestBuild(){
   const equal=metadata.version===RUNTIME_BUILD.version&&metadata.checkpoint===RUNTIME_BUILD.checkpoint&&metadata.buildId===RUNTIME_BUILD.buildId;
   state.textContent=equal?"Версия совпадает с TEST-сервером":"Есть другая версия на сервере: "+metadata.version+" · "+metadata.buildId+". Перезапустите PWA без удаления данных.";
   state.dataset.state=equal?"current":"newer-or-different";
+  if(equal){$("applyUpdate").hidden=true;hasDifferentServerRelease=false;expectedUpdate=null}
+  else{hasDifferentServerRelease=true;expectedUpdate={version:metadata.version,buildId:metadata.buildId};void stageNewUpdate()}
   lastVersionCheck=Date.now();
  }catch(err){
+  expectedUpdate=null;hasDifferentServerRelease=false;$("applyUpdate").hidden=true;
   state.textContent="Не удалось сверить с сервером. Показан номер локальной сборки.";
   state.dataset.state="unverified";
  }finally{versionCheckBusy=false;btn.disabled=false;}
 }
 
+/* CP08.8: only prepare a replacement after validated same-origin release metadata.
+   No auto-activation of waiting workers, no IndexedDB change or global caches.clear. */
+let hasDifferentServerRelease=false;
+let expectedUpdate=null;
+let trackedRegistration=null;
+let applyingUpdate=false;
+function markWaiting(reg){
+ if(!hasDifferentServerRelease||!reg||!reg.waiting)return;
+ $("applyUpdate").hidden=false;
+ $("versionState").textContent="Обновление загружено. Примените его после закрытия других вкладок PWA.";
+ $("versionState").dataset.state="newer-or-different";
+}
+function watchWorker(reg){
+ trackedRegistration=reg;
+ reg.addEventListener("updatefound",()=>{
+  const installing=reg.installing;
+  if(installing)installing.addEventListener("statechange",()=>{
+   if(installing.state==="installed")markWaiting(reg);
+  });
+ });
+ markWaiting(reg);
+}
+async function stageNewUpdate(){
+ if(!("serviceWorker" in navigator)||location.protocol!=="https:")return;
+ try{
+  const reg=trackedRegistration||await navigator.serviceWorker.getRegistration("./");
+  if(!reg)return;
+  if(!trackedRegistration)watchWorker(reg);
+  await reg.update();
+  markWaiting(reg);
+ }catch(err){
+  $("versionState").textContent="Обновление на сервере найдено, но загрузка пока не удалась. Старая версия продолжает работать.";
+  $("versionState").dataset.state="unverified";
+ }
+}
+async function applyPendingUpdate(){
+ if(applyingUpdate||!hasDifferentServerRelease||!expectedUpdate)return;
+ const reg=trackedRegistration||await navigator.serviceWorker.getRegistration("./");
+ if(!reg||!reg.waiting){$("versionState").textContent="Новая версия ещё не подготовлена. Проверьте обновления снова.";return}
+ applyingUpdate=true;$("applyUpdate").disabled=true;
+ const state=$("versionState");state.textContent="Применяю проверенную сборку…";
+ try{
+  if(typeof MessageChannel!=="function")throw new Error("MESSAGE_CHANNEL_UNAVAILABLE");
+  const waiting=reg.waiting;
+  // Capture the old controller and install listener BEFORE the worker may activate.
+  const priorController=navigator.serviceWorker.controller;
+  let completed=false;
+  const changed=()=>{if(completed)return;completed=true;location.reload()};
+  navigator.serviceWorker.addEventListener("controllerchange",changed,{once:true});
+  const msg=await new Promise((resolve,reject)=>{
+   const ch=new MessageChannel();
+   const timer=setTimeout(()=>{ch.port1.close();reject(new Error("ACTIVATION_TIMEOUT"))},5000);
+   ch.port1.onmessage=e=>{clearTimeout(timer);ch.port1.close();resolve(e.data)};
+   waiting.postMessage({type:"PAE06_PWA_ACTIVATE_V1",expectedVersion:expectedUpdate.version,expectedBuildId:expectedUpdate.buildId},[ch.port2]);
+  });
+  if(!msg||!msg.ok){
+   navigator.serviceWorker.removeEventListener("controllerchange",changed);
+   state.textContent=msg?.reason==="MULTIPLE_OR_NO_CLIENTS"?
+    "Откройте только одну вкладку PWA и повторите обновление.":
+    "Активация не разрешена. Текущая версия сохранена.";
+   state.dataset.state="unverified";return;
+  }
+  state.textContent="Обновление принято. При смене Service Worker страница обновится.";
+  state.dataset.state="newer-or-different";
+  if(navigator.serviceWorker.controller!==priorController)changed();
+ }catch(err){state.textContent="Обновление пока не применилось. Рабочая версия сохранена.";state.dataset.state="unverified"}
+ finally{applyingUpdate=false;$("applyUpdate").disabled=false}
+}
+
 function updateNetwork(){$("network").textContent=navigator.onLine?"Локально · онлайн":"Локально · офлайн"}
-async function init(){paintRuntimeBuild();$("checkVersion").onclick=checkLatestBuild;updateNetwork();window.addEventListener("online",()=>{updateNetwork();void checkLatestBuild()});window.addEventListener("focus",()=>{if(Date.now()-lastVersionCheck>60000)void checkLatestBuild()});window.addEventListener("offline",updateNetwork);$("addA").onclick=()=>addFixture("A");$("addB").onclick=()=>addFixture("B");$("file").onchange=async()=>{const f=$("file").files[0];if(f)await acceptBytes(await f.arrayBuffer())};$("search").oninput=()=>refresh(activeId);$("export").onclick=exportBackup;try{await refresh();good("TEST готов: храним только QA-A/QA-B; медицинские данные не принимаются.")}catch(e){good("IndexedDB недоступна: "+e.message,true)}if("serviceWorker" in navigator&&location.protocol==="https:"){try{await navigator.serviceWorker.register("./sw.js",{scope:"./"});await navigator.serviceWorker.ready;$("offline").textContent="Кэш установлен; офлайн требует проверки на устройстве"}catch(e){$("offline").textContent="Сервисный работник не запущен: "+e.message}}else{$("offline").textContent="Офлайн-кэш требует HTTPS и Safari"}void checkLatestBuild()}
+async function init(){
+ const consistent=paintRuntimeBuild();
+ $("checkVersion").onclick=checkLatestBuild;
+ $("applyUpdate").onclick=applyPendingUpdate;
+ if(!consistent){
+  for(const id of ["addA","addB","search","export","file"])$(id).disabled=true;
+  good("HTML и JavaScript разных сборок; загрузка документов заблокирована. Закройте PWA и откройте заново.",true);
+  return;
+ }
+ updateNetwork();window.addEventListener("online",()=>{updateNetwork();void checkLatestBuild()});window.addEventListener("focus",()=>{if(Date.now()-lastVersionCheck>60000)void checkLatestBuild()});window.addEventListener("offline",updateNetwork);$("addA").onclick=()=>addFixture("A");$("addB").onclick=()=>addFixture("B");$("file").onchange=async()=>{const f=$("file").files[0];if(f)await acceptBytes(await f.arrayBuffer())};$("search").oninput=()=>refresh(activeId);$("export").onclick=exportBackup;try{await refresh();good("TEST готов: храним только QA-A/QA-B; медицинские данные не принимаются.")}catch(e){good("IndexedDB недоступна: "+e.message,true)}if("serviceWorker" in navigator&&location.protocol==="https:"){try{const reg=await navigator.serviceWorker.register("./sw.js",{scope:"./"});watchWorker(reg);await navigator.serviceWorker.ready;$("offline").textContent="Кэш установлен; офлайн требует проверки на устройстве"}catch(e){$("offline").textContent="Сервисный работник не запущен: "+e.message}}else{$("offline").textContent="Офлайн-кэш требует HTTPS и Safari"}void checkLatestBuild()}
 init();

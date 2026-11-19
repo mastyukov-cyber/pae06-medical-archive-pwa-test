@@ -9,3 +9,6 @@
 .checkVersion{font:inherit;font-size:12px;font-weight:700;padding:9px 12px;border-radius:9px;background:#ebf3f9;color:#16385c;border:1px solid #bdd3e5;min-height:38px;cursor:pointer}
 .checkVersion:disabled{opacity:.6;cursor:wait}
 @media(max-width:640px){.versionbar{padding:12px;gap:10px}.versioncopy strong{font-size:14px}.versionright{width:100%;justify-content:space-between}.checkVersion{min-height:44px}}
+
+/* CP08.8: hidden update prompt must stay hidden despite generic button rules. */
+#applyUpdate[hidden]{display:none!important}#applyUpdate:not([hidden]){margin-top:8px}
