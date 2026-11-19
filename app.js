@@ -68,7 +68,7 @@ function base64(bytes){const a=new Uint8Array(bytes);let b="";for(let i=0;i<a.le
 async function exportBackup(){try{const docs=[];for(const r of validRows){const state=await classify(r);if(!state.ok)throw new Error("Целостность изменилась");docs.push({id:r.id,sha256:r.sha256,sourceEncoding:r.sourceEncoding,bytesBase64:base64(r.sourceBytes),syntheticOnly:true})}const data={format:"PAE06-CP082-SYNTHETIC-EXPORT-ONLY",version:1,clinicalAuthority:false,docs};const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="PAE06_CP082_SYNTHETIC_EXPORT.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);good("Учебная копия сформирована. Проверьте загрузки iPhone. Восстановление в этой версии отключено.")}catch(e){good("Экспорт не выполнен: "+e.message,true)}}
 
 /* CP08.7: identifiers reflect the LOADED JS, not the server's newest release. */
-const RUNTIME_BUILD=Object.freeze({version:"v0.8.11-test.1",checkpoint:"CP08.11",buildId:"20261119-03",channel:"TEST"});
+const RUNTIME_BUILD=Object.freeze({version:"v0.8.13-test.1",checkpoint:"CP08.13",buildId:"20261119-04",channel:"TEST"});
 let versionCheckBusy=false,lastVersionCheck=0;
 function paintRuntimeBuild(){
  $("versionText").textContent=`TEST ${RUNTIME_BUILD.version} · ${RUNTIME_BUILD.checkpoint}`;
@@ -160,13 +160,14 @@ async function applyPendingUpdate(){
  if(!reg||!reg.waiting){$("versionState").textContent="Новая версия ещё не подготовлена. Проверьте обновления снова.";return}
  applyingUpdate=true;$("applyUpdate").disabled=true;
  const state=$("versionState");state.textContent="Применяю проверенную сборку…";
+ let changed=null;
  try{
   if(typeof MessageChannel!=="function")throw new Error("MESSAGE_CHANNEL_UNAVAILABLE");
   const waiting=reg.waiting;
   // Capture the old controller and install listener BEFORE the worker may activate.
   const priorController=navigator.serviceWorker.controller;
   let completed=false;
-  const changed=()=>{if(completed)return;completed=true;location.reload()};
+  changed=()=>{if(completed)return;completed=true;location.reload()};
   navigator.serviceWorker.addEventListener("controllerchange",changed,{once:true});
   const msg=await new Promise((resolve,reject)=>{
    const ch=new MessageChannel();
@@ -184,7 +185,12 @@ async function applyPendingUpdate(){
   state.textContent="Обновление принято. При смене Service Worker страница обновится.";
   state.dataset.state="newer-or-different";
   if(navigator.serviceWorker.controller!==priorController)changed();
- }catch(err){state.textContent="Обновление пока не применилось. Рабочая версия сохранена.";state.dataset.state="unverified"}
+ }catch(err){
+   // CP08.13: a rejected/expired activation must not leave a reload trigger behind.
+   if(changed)navigator.serviceWorker.removeEventListener("controllerchange",changed);
+   state.textContent="Обновление пока не применилось. Рабочая версия сохранена.";
+   state.dataset.state="unverified"
+  }
  finally{applyingUpdate=false;$("applyUpdate").disabled=false}
 }
 
