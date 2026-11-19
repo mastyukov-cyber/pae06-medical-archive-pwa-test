@@ -24,3 +24,14 @@
 .timelineevent strong{font-size:14px}.timelineevent span{font-size:12px;color:#466984;line-height:1.5}
 .catalogprovenance{font-size:12px;line-height:1.5;color:#80551a;background:#fff5df;border-radius:9px;padding:11px;margin:12px 0 0}
 @media(max-width:640px){.catalogtimeline{padding:12px}.timelineevent{min-height:57px}}
+
+/* CP08.10 — synthetic Mac-derived preview. No medical import or edit controls. */
+.macderived{background:#fff;border:1px solid #cadce9;border-radius:15px;padding:16px;margin:16px 0}
+.macderived summary{color:#183a56;font-weight:700;cursor:pointer;font-size:16px;min-height:32px}
+.macderived-warning{color:#7d4b16;background:#fff4de;padding:12px;border-radius:10px;line-height:1.5}
+.macderived-list{display:grid;gap:12px;margin-top:12px}
+.macderived-card{border:1px solid #d1e0ea;border-radius:12px;padding:13px;background:#f7fafc}
+.macderived-card h4{font-size:17px;margin:0 0 8px;color:#183a56}
+.macderived-card p{margin:7px 0;line-height:1.45;font-size:13px;color:#496680}
+.macderived-card .macderived-unknown{font-weight:700;color:#925e16}
+.macderived-card code{font-size:11px;overflow-wrap:anywhere;background:#eaf2f7;padding:7px;display:block;border-radius:7px}
