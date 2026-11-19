@@ -1,8 +1,8 @@
 {
   "app": "PAE-06 Medical Archive PWA",
   "channel": "TEST",
-  "version": "v0.8.8-test.1",
-  "checkpoint": "CP08.8",
-  "buildId": "20261118-02",
+  "version": "v0.8.9-test.1",
+  "checkpoint": "CP08.9",
+  "buildId": "20261119-01",
   "syntheticOnly": true
 }

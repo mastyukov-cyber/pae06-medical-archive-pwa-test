@@ -17,12 +17,50 @@ async function addRecord(rec){const db=await dbOpen();try{await new Promise((res
 async function sha256(bytes){const h=await crypto.subtle.digest("SHA-256",bytes.slice(0));return Array.from(new Uint8Array(h),x=>x.toString(16).padStart(2,"0")).join("")}
 const lookup=r=>Object.values(FIXTURES).find(f=>f.id===r?.id&&f.sha256===r?.sha256);
 async function classify(rec){const f=lookup(rec);if(!f)return {ok:false,reason:"UNKNOWN_OR_MISMATCHED_ID_SHA"};if(rec.sourceEncoding!=="arraybuffer-v1"||!(rec.sourceBytes instanceof ArrayBuffer))return {ok:false,reason:"QUARANTINE_LEGACY_OR_VERSIONED_MISSING_BYTES"};if(rec.sourceBytes.byteLength<10||rec.sourceBytes.byteLength>1024*1024)return {ok:false,reason:"INVALID_SIZE"};if(await sha256(rec.sourceBytes)!==f.sha256)return {ok:false,reason:"ORIGINAL_SHA_MISMATCH"};return {ok:true,fixture:f}}
-async function refresh(id=activeId){const rows=await allRecords(),checked=await Promise.all(rows.map(classify));validRows=rows.filter((_,i)=>checked[i].ok);const rejected=rows.length-validRows.length;$("count").textContent=validRows.length;$("items").replaceChildren();const q=$("search").value.trim().toLocaleLowerCase("ru");const filtered=validRows.filter(r=>lookup(r).title.toLocaleLowerCase("ru").includes(q)||r.id.includes(q));for(const r of filtered){const f=lookup(r),b=document.createElement("button");b.type="button";b.className="item"+(r.id===id?" active":"");const title=document.createElement("strong"),detail=document.createElement("span");title.textContent=f.title;detail.textContent=f.pages+" стр. · проверен SHA-256";b.append(title,detail);b.onclick=()=>openDetail(r.id,1);$("items").append(b)}if(!filtered.length){const empty=document.createElement("div");empty.className="small";empty.textContent="Документов по запросу нет";$("items").append(empty)}if(rejected)good("Карантин: "+rejected+" запись(ей) не прошли проверку. Не отображаются.",true);if(id&&validRows.some(r=>r.id===id))await openDetail(id,activePage);else if(validRows.length)await openDetail(validRows[0].id,1);else {activeId=null;$("detail").replaceChildren();const e=document.createElement("div");e.className="empty";e.textContent="Добавьте QA-A или QA-B, чтобы проверить просмотр страниц.";$("detail").append(e)}}
+async function refresh(id=activeId){
+ const rows=await allRecords(),checked=await Promise.all(rows.map(classify));
+ validRows=rows.filter((_,i)=>checked[i].ok);
+ const rejected=rows.length-validRows.length;
+ $("count").textContent=validRows.length;
+ $("items").replaceChildren();
+ const catalog=window.PAE06Catalog;
+ if(!catalog)throw new Error("Модуль каталога не загружен: документы не изменены");
+ const entries=catalog.prepare(validRows,lookup,$("search").value,$("sortMode").value);
+ $("matchCount").textContent=`Найдено: ${entries.length} из ${validRows.length}`;
+ for(const entry of entries){
+  const r=entry.row,f=entry.fixture,b=document.createElement("button");
+  b.type="button";b.className="item"+(r.id===id?" active":"");
+  const title=document.createElement("strong"),detail=document.createElement("span"),added=document.createElement("span");
+  title.textContent=f.title;
+  detail.textContent=f.pages+" стр. · проверен SHA-256 · только учебный PDF";
+  added.textContent=catalog.addedLabel(r);
+  b.append(title,detail,added);
+  b.onclick=()=>openDetail(r.id,1);
+  $("items").append(b);
+ }
+ if(!entries.length){const empty=document.createElement("div");empty.className="small";empty.textContent="Учебных документов по запросу нет";$("items").append(empty)}
+ const timeline=$("timelineList");timeline.replaceChildren();
+ // Timeline is always chronological, independently of list sort order.
+ for(const entry of catalog.prepare(validRows,lookup,$("search").value,"newest")){
+  const b=document.createElement("button");b.type="button";b.className="timelineevent";
+  const title=document.createElement("strong"),desc=document.createElement("span");
+  title.textContent=entry.fixture.title;
+  desc.textContent=catalog.addedLabel(entry.row)+" · источник: учебный PDF, пациент не указан";
+  b.append(title,desc);b.onclick=()=>openDetail(entry.row.id,1);
+  timeline.append(b);
+ }
+ if(!timeline.children.length){const p=document.createElement("p");p.className="small";p.textContent="Событий добавления нет";timeline.append(p)}
+ if(rejected)good("Карантин: "+rejected+" запись(ей) не прошли проверку. Не отображаются.",true);
+ if(id&&entries.some(entry=>entry.row.id===id))await openDetail(id,activePage);
+ else if(entries.length)await openDetail(entries[0].row.id,1);
+ else {activeId=null;$("detail").replaceChildren();const e=document.createElement("div");e.className="empty";e.textContent=validRows.length?"По вашему запросу документы не найдены.":"Добавьте QA-A или QA-B, чтобы проверить просмотр страниц.";$("detail").append(e)}
+}
+
 function label(tag,className,text){const e=document.createElement(tag);if(className)e.className=className;e.textContent=text;return e}
 async function openDetail(id,page){const seq=++renderSeq;const rec=validRows.find(r=>r.id===id);if(!rec)return;const state=await classify(rec);if(seq!==renderSeq)return;if(!state.ok){good("Документ помещён в карантин: "+state.reason,true);await refresh();return}const f=state.fixture;activeId=id;activePage=Math.max(1,Math.min(page,f.pages));$("items").querySelectorAll(".item").forEach((b,i)=>b.classList.toggle("active",b.querySelector("strong")?.textContent===f.title));const wrap=$("detail");wrap.replaceChildren();const head=label("div","detailhead",""),info=document.createElement("div"),h=label("h3","",f.title),sm=label("p","","Проверенные исходные PDF-байты · только QA");info.append(h,sm);head.append(info);const open=label("button","secondary","Оригинал PDF");open.onclick=()=>{releaseBlob();openBlob=URL.createObjectURL(new Blob([rec.sourceBytes.slice(0)],{type:"application/pdf"}));const a=document.createElement("a");a.href=openBlob;a.target="_blank";a.rel="noopener noreferrer";a.download=f.id+".pdf";document.body.append(a);a.click();a.remove()};head.append(open);
 const nav=label("div","pager",""),prev=label("button","","← Назад"),at=label("span","",`Страница ${activePage} из ${f.pages}`),next=label("button","","Далее →");prev.disabled=activePage===1;next.disabled=activePage===f.pages;prev.onclick=()=>openDetail(id,activePage-1);next.onclick=()=>openDetail(id,activePage+1);nav.append(prev,at,next);
 const viewer=label("div","preview",""),img=document.createElement("img");img.src=f.previews[activePage-1];img.alt=`${f.title}, страница ${activePage}`;img.loading="lazy";viewer.append(img);
-const meta=label("div","meta",""),left=label("div","","Формат"),right=label("div","","Контроль оригинала");left.append(label("strong","","ArrayBuffer · IndexedDB"));right.append(label("strong","",f.sha256));meta.append(left,right);wrap.append(head,nav,viewer,meta);
+const meta=label("div","meta",""),left=label("div","","Формат"),right=label("div","","Контроль оригинала");left.append(label("strong","","ArrayBuffer · IndexedDB"));right.append(label("strong","",f.sha256));meta.append(left,right);const provenance=label("p","catalogprovenance","Источник: локально добавленный учебный PDF. Связь с пациентом и дата исследования НЕ ПОДТВЕРЖДЕНЫ. "+window.PAE06Catalog.addedLabel(rec));wrap.append(head,nav,viewer,meta,provenance);
 }
 async function acceptBytes(bytes){if(busy)return;busy=true;$("addA").disabled=$("addB").disabled=true;try{if(!(bytes instanceof ArrayBuffer)||bytes.byteLength>1024*1024||bytes.byteLength<10)throw new Error("Недопустимый размер файла");const u=new Uint8Array(bytes);if(String.fromCharCode(...u.slice(0,5))!=="%PDF-")throw new Error("Это не PDF");const hash=await sha256(bytes),f=Object.values(FIXTURES).find(x=>x.sha256===hash);if(!f)throw new Error("Разрешены только учебные PDF QA-A и QA-B. Любые реальные документы отклоняются.");const exists=(await allRecords()).some(x=>x.id===f.id);if(exists){good("Учебный "+f.id.toUpperCase()+" уже сохранён. Дубликат отклонён.");await refresh(f.id);return}const now=new Date().toISOString();await addRecord({id:f.id,title:f.title,sha256:hash,sourceEncoding:"arraybuffer-v1",sourceBytes:bytes.slice(0),syntheticOnly:true,createdAt:now});await refresh(f.id);good(f.title+" сохранён в локальном хранилище. Оригинал SHA-256 проверен.")}catch(e){good("Ошибка: "+e.message,true)}finally{busy=false;$("addA").disabled=$("addB").disabled=false;$("file").value=""}}
 async function addFixture(key){const f=FIXTURES[key];try{const r=await fetch(f.file,{cache:"default"});if(!r.ok)throw new Error("Не удалось открыть учебный PDF");await acceptBytes(await r.arrayBuffer())}catch(e){good("Не удалось открыть учебный PDF: "+e.message,true)}}
@@ -30,7 +68,7 @@ function base64(bytes){const a=new Uint8Array(bytes);let b="";for(let i=0;i<a.le
 async function exportBackup(){try{const docs=[];for(const r of validRows){const state=await classify(r);if(!state.ok)throw new Error("Целостность изменилась");docs.push({id:r.id,sha256:r.sha256,sourceEncoding:r.sourceEncoding,bytesBase64:base64(r.sourceBytes),syntheticOnly:true})}const data={format:"PAE06-CP082-SYNTHETIC-EXPORT-ONLY",version:1,clinicalAuthority:false,docs};const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="PAE06_CP082_SYNTHETIC_EXPORT.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);good("Учебная копия сформирована. Проверьте загрузки iPhone. Восстановление в этой версии отключено.")}catch(e){good("Экспорт не выполнен: "+e.message,true)}}
 
 /* CP08.7: identifiers reflect the LOADED JS, not the server's newest release. */
-const RUNTIME_BUILD=Object.freeze({version:"v0.8.8-test.1",checkpoint:"CP08.8",buildId:"20261118-02",channel:"TEST"});
+const RUNTIME_BUILD=Object.freeze({version:"v0.8.9-test.1",checkpoint:"CP08.9",buildId:"20261119-01",channel:"TEST"});
 let versionCheckBusy=false,lastVersionCheck=0;
 function paintRuntimeBuild(){
  $("versionText").textContent=`TEST ${RUNTIME_BUILD.version} · ${RUNTIME_BUILD.checkpoint}`;
@@ -81,7 +119,7 @@ async function checkLatestBuild(){
  }finally{versionCheckBusy=false;btn.disabled=false;}
 }
 
-/* CP08.8: only prepare a replacement after validated same-origin release metadata.
+/* CP08.9: only prepare a replacement after validated same-origin release metadata.
    No auto-activation of waiting workers, no IndexedDB change or global caches.clear. */
 let hasDifferentServerRelease=false;
 let expectedUpdate=null;
@@ -160,5 +198,5 @@ async function init(){
   good("HTML и JavaScript разных сборок; загрузка документов заблокирована. Закройте PWA и откройте заново.",true);
   return;
  }
- updateNetwork();window.addEventListener("online",()=>{updateNetwork();void checkLatestBuild()});window.addEventListener("focus",()=>{if(Date.now()-lastVersionCheck>60000)void checkLatestBuild()});window.addEventListener("offline",updateNetwork);$("addA").onclick=()=>addFixture("A");$("addB").onclick=()=>addFixture("B");$("file").onchange=async()=>{const f=$("file").files[0];if(f)await acceptBytes(await f.arrayBuffer())};$("search").oninput=()=>refresh(activeId);$("export").onclick=exportBackup;try{await refresh();good("TEST готов: храним только QA-A/QA-B; медицинские данные не принимаются.")}catch(e){good("IndexedDB недоступна: "+e.message,true)}if("serviceWorker" in navigator&&location.protocol==="https:"){try{const reg=await navigator.serviceWorker.register("./sw.js",{scope:"./"});watchWorker(reg);await navigator.serviceWorker.ready;$("offline").textContent="Кэш установлен; офлайн требует проверки на устройстве"}catch(e){$("offline").textContent="Сервисный работник не запущен: "+e.message}}else{$("offline").textContent="Офлайн-кэш требует HTTPS и Safari"}void checkLatestBuild()}
+ updateNetwork();window.addEventListener("online",()=>{updateNetwork();void checkLatestBuild()});window.addEventListener("focus",()=>{if(Date.now()-lastVersionCheck>60000)void checkLatestBuild()});window.addEventListener("offline",updateNetwork);$("addA").onclick=()=>addFixture("A");$("addB").onclick=()=>addFixture("B");$("file").onchange=async()=>{const f=$("file").files[0];if(f)await acceptBytes(await f.arrayBuffer())};$("search").oninput=()=>refresh(activeId);$("sortMode").onchange=()=>refresh(activeId);$("export").onclick=exportBackup;try{await refresh();good("TEST готов: храним только QA-A/QA-B; медицинские данные не принимаются.")}catch(e){good("IndexedDB недоступна: "+e.message,true)}if("serviceWorker" in navigator&&location.protocol==="https:"){try{const reg=await navigator.serviceWorker.register("./sw.js",{scope:"./"});watchWorker(reg);await navigator.serviceWorker.ready;$("offline").textContent="Кэш установлен; офлайн требует проверки на устройстве"}catch(e){$("offline").textContent="Сервисный работник не запущен: "+e.message}}else{$("offline").textContent="Офлайн-кэш требует HTTPS и Safari"}void checkLatestBuild()}
 init();

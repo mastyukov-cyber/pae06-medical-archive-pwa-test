@@ -12,3 +12,15 @@
 
 /* CP08.8: hidden update prompt must stay hidden despite generic button rules. */
 #applyUpdate[hidden]{display:none!important}#applyUpdate:not([hidden]){margin-top:8px}
+
+/* CP08.9: local read-only document catalog */
+.catalogcontrols{display:grid;gap:7px;margin:13px 0;border-top:1px solid #d8e4ec;padding-top:12px}
+.catalogcontrols label{font-size:12px;font-weight:700;color:#385873}
+.catalogcontrols select{width:100%;min-height:44px;border:1px solid #b6cddd;border-radius:10px;background:#fff;color:#183956;padding:7px 10px;font:inherit;font-size:13px}
+.item span{display:block;font-size:12px;line-height:1.4;color:#526d83;margin-top:3px}
+.catalogtimeline{background:#fff;border:1px solid #d5e0ea;border-radius:15px;padding:15px;margin:15px 0}
+.catalogtimeline summary{font-weight:700;color:#183b57;cursor:pointer;min-height:32px}
+.timelineitems{display:grid;gap:8px;margin-top:13px}.timelineevent{display:grid;gap:4px;text-align:left;width:100%;padding:13px;border:1px solid #c9dbe8;border-radius:11px;background:#f7fafc;color:#183b57;font:inherit;cursor:pointer}
+.timelineevent strong{font-size:14px}.timelineevent span{font-size:12px;color:#466984;line-height:1.5}
+.catalogprovenance{font-size:12px;line-height:1.5;color:#80551a;background:#fff5df;border-radius:9px;padding:11px;margin:12px 0 0}
+@media(max-width:640px){.catalogtimeline{padding:12px}.timelineevent{min-height:57px}}
