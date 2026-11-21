@@ -1,0 +1,110 @@
+name: PAE-06 CP08.18-A one-shot real PDF.js PageLink Linux WebKit
+
+on:
+  push:
+    branches:
+      - pilot/pae06-qa-hub-v1-20261121
+    paths:
+      - .github/workflows/pae06-cp0818-a-pagelink-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pae06-cp0818-a-once
+  cancel-in-progress: false
+
+jobs:
+  webkit-pagelink-once:
+    if: github.event.before == '5e028f3cf62175edc66e0658dad816ddeefca5bd' && github.event.created == false && github.event.deleted == false && github.event.forced == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CI: 'true'
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      NPM_CONFIG_FETCH_RETRIES: '0'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout exact candidate without persistent credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          set-safe-directory: false
+          fetch-depth: 3
+
+      - name: Configure pinned Node.js 22.16.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+
+      - name: STOP FIRST verify exact add-only history and pinned sources
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/pilot/pae06-qa-hub-v1-20261121'
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = '5e028f3cf62175edc66e0658dad816ddeefca5bd'
+          test "$(git rev-parse HEAD^^)" = 'ecef7db68bc2d82bdc8e67997a54883352b3a4fc'
+          test "$(git diff --name-status HEAD^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0818-a-pagelink-once.yml')"
+          python3 - <<'PY'
+          import subprocess
+          result=subprocess.check_output(['git','diff','--name-status','HEAD^^','HEAD'],text=True)
+          expected=['.github/workflows/pae06-cp0818-a-pagelink-once.yml']+[
+            'qa-hub/candidates/cp0818-pagelink/'+name for name in (
+              'README.md','SOURCE_SHA256SUMS.txt','index.html','qa/serve.mjs','qa/webkit-once.mjs',
+              'src/pdf-page-link.mjs','ui.css','vendor/LICENSE_NOTICE.txt',
+              'vendor/pdfjs/pdf.mjs','vendor/pdfjs/pdf.worker.mjs','viewer.mjs')]
+          entries=[line.split('\t',1) for line in result.strip().splitlines()]
+          if len(entries)!=12 or any(status!='A' for status,_ in entries) or sorted(path for _,path in entries)!=sorted(expected):
+            raise SystemExit('SCOPE_DIFF_FAIL_STOP_FIRST')
+          print('ADD_ONLY_12_12_PASS')
+          PY
+          test -z "$(git status --porcelain)"
+          test "$(node --version)" = 'v22.16.0'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818-pagelink/vendor/pdfjs/pdf.mjs)" = 'b3300439a5c0e7ef36c13d19794d172326169e24'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818-pagelink/vendor/pdfjs/pdf.worker.mjs)" = 'e33f30991d4e81617c2fec43e4eec96de095a39d'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818-pagelink/src/pdf-page-link.mjs)" = '9f1637558c2c8a892c7296e58e874700245cdf77'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818-pagelink/qa/webkit-once.mjs)" = 'aa98791664104092454c2d9669040f1fbcce085c'
+          test "$(git rev-parse HEAD:app.js)" = '6065e80353734648d211b31582ec1462d264e046'
+          test "$(git rev-parse HEAD:sw.js)" = 'e6bdb9ed12eb5da3037cd9ef7f083d09a69b9c51'
+          test "$(git rev-parse HEAD:mac-derived-adapter.mjs)" = 'f9c0d43ba0467bbd1beeb435d6b7d1373eb4e771'
+          cd qa-hub/candidates/cp0818-pagelink
+          sha256sum --status -c SOURCE_SHA256SUMS.txt
+          echo 'SOURCE_SHA256SUMS_10_OF_10_PASS'
+          node --check src/pdf-page-link.mjs
+          node --check viewer.mjs
+          node --check qa/serve.mjs
+          node --check qa/webkit-once.mjs
+          node --check vendor/pdfjs/pdf.mjs
+          node --check vendor/pdfjs/pdf.worker.mjs
+          cd ../../../
+          node -e "const p=require('./qa-hub/package.json');const l=require('./qa-hub/package-lock.json');if(p.dependencies.playwright!=='1.65.1'||l.packages['node_modules/playwright-core'].version!=='1.65.1')process.exit(1)"
+          echo 'PREFLIGHT_ALL_PASS'
+
+      - name: Install only locked Playwright client
+        working-directory: qa-hub
+        run: npm ci --ignore-scripts --no-audit --no-fund --no-progress
+
+      - name: Exactly one new Linux WebKit real PDF.js integration QA
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain)"
+          docker run --rm \
+            --network none \
+            --read-only \
+            --cap-drop=ALL \
+            --security-opt=no-new-privileges \
+            --pids-limit=384 \
+            --memory=3g \
+            --cpus=2 \
+            --shm-size=768m \
+            --user "$(id -u):$(id -g)" \
+            --env HOME=/tmp \
+            --env CI=true \
+            --env PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+            --tmpfs /tmp:rw,nosuid,size=768m,mode=1777 \
+            --volume "$GITHUB_WORKSPACE:/repo:ro" \
+            --workdir /repo/qa-hub/candidates/cp0818-pagelink/qa \
+            mcr.microsoft.com/playwright:v1.65.1-noble \
+            node webkit-once.mjs
