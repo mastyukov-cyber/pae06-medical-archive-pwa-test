@@ -65,7 +65,7 @@ async function preview(){
  finally{setBusy(false);unlockPlan();el('commitButton').disabled=true}
 }
 async function commit(){
- if(busy||locked||!plan||!db||!selectedText||!el('writeConsent').checked||!plan.wouldAdd.length)return;
+ if(busy||locked||!plan||!db||!selectedText||!el('storageConsent').checked||!el('writeConsent').checked||!plan.wouldAdd.length)return;
  const token=plan.previewToken;plan=null;phase='committing';setBusy(true);
  message('Выполняется атомарная запись двух разрешённых учебных документов. Не закрывайте страницу.');
  try{
@@ -92,7 +92,14 @@ el('sample').addEventListener('click',async()=>{
  await selectText(await r.text(),'QA-A + QA-B · учебный пример');}
  catch{message('Не удалось загрузить учебный пример. Данные не изменены.',true)}
 });
-el('storageConsent').addEventListener('change',unlockPlan);
+el('storageConsent').addEventListener('change',()=>{
+ if(!el('storageConsent').checked&&plan){
+  resetView({keepSelected:true});
+  phase='file';
+  message('Согласие на проверку базы снято. Предпросмотр аннулирован; повторите проверку перед записью.');
+ }
+ unlockPlan();
+});
 el('previewButton').addEventListener('click',preview);
 el('writeConsent').addEventListener('change',()=>{el('commitButton').disabled=busy||locked||!plan||!plan.wouldAdd.length||!el('writeConsent').checked});
 el('commitButton').addEventListener('click',commit);
