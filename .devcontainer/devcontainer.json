@@ -1,0 +1,11 @@
+{
+  "name": "PAE-06 QA HUB synthetic / NOT RUN",
+  "image": "mcr.microsoft.com/playwright:v1.65.1-noble",
+  "forwardPorts": [],
+  "portsAttributes": {
+    "8768": {
+      "label": "LOCAL QA ONLY / DO NOT FORWARD",
+      "onAutoForward": "ignore"
+    }
+  }
+}
