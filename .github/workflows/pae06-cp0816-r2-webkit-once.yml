@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   webkit-r2-once:
-    if: github.event.before == '269afe03c2a3c65b6e4cadac0fa08652562a5609' && github.event.created == false && github.event.deleted == false && github.event.forced == false
+    if: github.event.before == '2ab38349ac4a594da2d34ed80e77b242b31964d1' && github.event.created == false && github.event.deleted == false && github.event.forced == false
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
@@ -32,7 +32,7 @@ jobs:
         with:
           persist-credentials: false
           set-safe-directory: false
-          fetch-depth: 5
+          fetch-depth: 7
 
       - name: Set exact Node 22.16.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -53,19 +53,21 @@ jobs:
           }
           guard GITHUB_BRANCH test "$GITHUB_REF" = 'refs/heads/pilot/pae06-qa-hub-v1-20261121'
           guard CHECKOUT_EQUALS_EVENT_SHA test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          guard PARENT_IS_APPROVED_HEAD test "$(git rev-parse HEAD^)" = '269afe03c2a3c65b6e4cadac0fa08652562a5609'
-          guard GRANDPARENT_IS_WORKFLOW_COMMIT test "$(git rev-parse HEAD^^)" = '61c2d89ee8ddaa1352f2368e5129b57606ff30b1'
-          guard THIRD_ANCESTOR_IS_TEST_COMMIT test "$(git rev-parse HEAD^^^)" = '967936c20bb1272f8df0dfb1c7ad163bb90ddd11'
-          guard FOURTH_ANCESTOR_IS_QA_HUB test "$(git rev-parse HEAD^^^^)" = '5566dd03f91eb3d148326b28f992ab9442af7ccc'
+          guard PARENT_IS_APPROVED_HEAD test "$(git rev-parse HEAD^)" = '2ab38349ac4a594da2d34ed80e77b242b31964d1'
+          guard GRANDPARENT_IS_DOCKER_FIX test "$(git rev-parse HEAD^^)" = 'ebc84af80934bc8b902570296bd13a3f9d55191b'
+          guard THIRD_ANCESTOR_IS_DIAGNOSTIC_FIX test "$(git rev-parse HEAD^^^)" = '269afe03c2a3c65b6e4cadac0fa08652562a5609'
+          guard FOURTH_ANCESTOR_IS_INITIAL_WORKFLOW test "$(git rev-parse HEAD^^^^)" = '61c2d89ee8ddaa1352f2368e5129b57606ff30b1'
+          guard FIFTH_ANCESTOR_IS_INITIAL_TEST test "$(git rev-parse HEAD^^^^^)" = '967936c20bb1272f8df0dfb1c7ad163bb90ddd11'
+          guard SIXTH_ANCESTOR_IS_QA_HUB test "$(git rev-parse HEAD^^^^^^)" = '5566dd03f91eb3d148326b28f992ab9442af7ccc'
           guard ONE_FILE_MODIFIED test "$(git diff --name-status HEAD^ HEAD)" = "$(printf 'M\t.github/workflows/pae06-cp0816-r2-webkit-once.yml')"
-          guard WORKFLOW_MODIFIED_FROM_FIRST_RUN test "$(git diff --name-status HEAD^^ HEAD)" = "$(printf 'M\t.github/workflows/pae06-cp0816-r2-webkit-once.yml')"
-          guard WORKFLOW_ADDED_SINCE_TEST_COMMIT test "$(git diff --name-status HEAD^^^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0816-r2-webkit-once.yml')"
-          guard EXACT_SOURCES_FROM_BASE test "$(git diff --name-status HEAD^^^^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0816-r2-webkit-once.yml\nA\tqa-hub/r2-tx01-webkit.mjs')"
+          guard EXACT_TWO_FILES_SINCE_DOCKER_FIX test "$(git diff --name-status HEAD^^ HEAD)" = "$(printf 'M\t.github/workflows/pae06-cp0816-r2-webkit-once.yml\nM\tqa-hub/r2-tx01-webkit.mjs')"
+          guard TEST_FIX_AND_WORKFLOW_ADDITION test "$(git diff --name-status HEAD^^^^^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0816-r2-webkit-once.yml\nM\tqa-hub/r2-tx01-webkit.mjs')"
+          guard EXACT_SOURCES_FROM_BASE test "$(git diff --name-status HEAD^^^^^^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0816-r2-webkit-once.yml\nA\tqa-hub/r2-tx01-webkit.mjs')"
           guard CLEAN_WORKTREE test -z "$(git status --porcelain)"
           guard NODE_EXACT_VERSION test "$(node --version)" = 'v22.16.0'
           guard TEST_SCRIPT_SYNTAX node --check qa-hub/r2-tx01-webkit.mjs
           guard PLAYWRIGHT_PIN node -e "const p=require('./qa-hub/package.json');const l=require('./qa-hub/package-lock.json');if(p.dependencies.playwright!=='1.65.1'||l.packages['node_modules/playwright-core'].version!=='1.65.1')process.exit(1)"
-          guard PIN_TEST_SCRIPT test "$(git rev-parse HEAD:qa-hub/r2-tx01-webkit.mjs)" = 'd86c898e9e2a5eb243dcab979ff7952666fa8a2c'
+          guard PIN_TEST_SCRIPT test "$(git rev-parse HEAD:qa-hub/r2-tx01-webkit.mjs)" = '0aaf7f132cf6c1c0b6f0785436257efcd8e87a70'
           guard PIN_EXISTING_HUB test "$(git rev-parse HEAD:qa-hub/qa-hub.mjs)" = '3324dcaea29332c83e329346be66cf16db85b0d1'
           guard PIN_PACKAGE_LOCK test "$(git rev-parse HEAD:qa-hub/package-lock.json)" = '0feda295284b5e56637aa036821bd24dd074f5ab'
           guard PIN_RESTORE_SOURCE test "$(git rev-parse HEAD:src/restore.mjs)" = '2cdbc7223f96978d4cc823ad6ef434ccb8b76ce6'
