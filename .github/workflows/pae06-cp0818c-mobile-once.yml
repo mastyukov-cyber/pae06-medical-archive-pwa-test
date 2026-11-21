@@ -1,0 +1,92 @@
+name: PAE-06 CP08.18-C one-shot iPhone-emulated WebKit Chromium QA
+
+on:
+  push:
+    branches:
+      - pilot/pae06-qa-hub-v1-20261121
+    paths:
+      - .github/workflows/pae06-cp0818c-mobile-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pae06-cp0818c-mobile-once
+  cancel-in-progress: false
+
+jobs:
+  mobile-webkit-chromium-once:
+    if: github.event.before == 'd081face02c4b6eeee46be217e004d94a288e318' && github.event.created == false && github.event.deleted == false && github.event.forced == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CI: 'true'
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      NPM_CONFIG_FETCH_RETRIES: '0'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout pinned QA source without persistent credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          set-safe-directory: false
+          fetch-depth: 2
+
+      - name: Setup pinned Node.js 22.16.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+
+      - name: STOP FIRST verify exact workflow-only add and original mobile source
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/pilot/pae06-qa-hub-v1-20261121'
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = 'd081face02c4b6eeee46be217e004d94a288e318'
+          test "$(git diff --name-status HEAD^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0818c-mobile-once.yml')"
+          test -z "$(git status --porcelain)"
+          test "$(node --version)" = 'v22.16.0'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818c-mobile/qa/mobile-webkit-chromium-once.mjs)" = 'f28297414c2848efac6f381868f3cc8925132a12'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818b-idb-viewer/entry.mjs)" = 'fec5ce45e4fd2dfd55f4be9e3c730539bbfb53d7'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818b-idb-viewer/index.html)" = '48a57c208672dd4bc6648d23c9dbb9d058f9e5f0'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818b-idb-viewer/src/idb-readonly-bridge.mjs)" = '728988e81481bc0a7913fd0d784e9457c69452e3'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818b-idb-viewer/src/render-verified-pdf.mjs)" = 'd7033ade5f6b17efb1c440cc66a757f76bb4eca6'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818b-idb-viewer/qa/serve.mjs)" = '6cf15554c5d214ef4868777a4cea1955d5ec3d4d'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818-pagelink/src/pdf-page-link.mjs)" = '9f1637558c2c8a892c7296e58e874700245cdf77'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818-pagelink/vendor/pdfjs/pdf.mjs)" = 'b3300439a5c0e7ef36c13d19794d172326169e24'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0818-pagelink/vendor/pdfjs/pdf.worker.mjs)" = 'e33f30991d4e81617c2fec43e4eec96de095a39d'
+          test "$(git rev-parse HEAD:app.js)" = '6065e80353734648d211b31582ec1462d264e046'
+          test "$(git rev-parse HEAD:sw.js)" = 'e6bdb9ed12eb5da3037cd9ef7f083d09a69b9c51'
+          printf '%s  %s\n' '4e2771233e0ac9b85b6102bea2ef4b80eaa30c79bd54f487316b47f34eb8d153' fixtures/PAE06_QA_A_1_PAGE.pdf '3e6431cba0304f7480999803b1cc954dd38e582bf172afc38acebc01e3825982' fixtures/PAE06_QA_B_2_PAGES.pdf | sha256sum --status -c -
+          node --check qa-hub/candidates/cp0818c-mobile/qa/mobile-webkit-chromium-once.mjs
+          node -e "const p=require('./qa-hub/package.json'),l=require('./qa-hub/package-lock.json');if(p.dependencies.playwright!=='1.65.1'||l.packages['node_modules/playwright-core'].version!=='1.65.1')process.exit(1)"
+          echo 'CP0818C_MOBILE_PREFLIGHT_PASS'
+
+      - name: Install only locked Playwright 1.65.1 client
+        working-directory: qa-hub
+        run: npm ci --ignore-scripts --no-audit --no-fund --no-progress
+
+      - name: Exactly one new iPhone-emulated WebKit plus Chromium run
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v22.16.0'
+          docker run --rm \
+            --network none \
+            --read-only \
+            --cap-drop=ALL \
+            --security-opt=no-new-privileges \
+            --pids-limit=384 \
+            --memory=3g \
+            --cpus=2 \
+            --shm-size=768m \
+            --user "$(id -u):$(id -g)" \
+            --env HOME=/tmp \
+            --env CI=true \
+            --env PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+            --tmpfs /tmp:rw,nosuid,size=768m,mode=1777 \
+            --volume "$GITHUB_WORKSPACE:/repo:ro" \
+            --workdir /repo/qa-hub/candidates/cp0818c-mobile/qa \
+            mcr.microsoft.com/playwright:v1.65.1-noble \
+            node mobile-webkit-chromium-once.mjs
