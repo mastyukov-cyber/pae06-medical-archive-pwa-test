@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   webkit-r2-once:
-    if: github.event.before == '61c2d89ee8ddaa1352f2368e5129b57606ff30b1' && github.event.created == false && github.event.deleted == false && github.event.forced == false
+    if: github.event.before == '269afe03c2a3c65b6e4cadac0fa08652562a5609' && github.event.created == false && github.event.deleted == false && github.event.forced == false
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
@@ -32,7 +32,7 @@ jobs:
         with:
           persist-credentials: false
           set-safe-directory: false
-          fetch-depth: 4
+          fetch-depth: 5
 
       - name: Set exact Node 22.16.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -53,12 +53,14 @@ jobs:
           }
           guard GITHUB_BRANCH test "$GITHUB_REF" = 'refs/heads/pilot/pae06-qa-hub-v1-20261121'
           guard CHECKOUT_EQUALS_EVENT_SHA test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          guard PARENT_IS_APPROVED_HEAD test "$(git rev-parse HEAD^)" = '61c2d89ee8ddaa1352f2368e5129b57606ff30b1'
-          guard GRANDPARENT_IS_TEST_COMMIT test "$(git rev-parse HEAD^^)" = '967936c20bb1272f8df0dfb1c7ad163bb90ddd11'
-          guard THIRD_ANCESTOR_IS_QA_HUB test "$(git rev-parse HEAD^^^)" = '5566dd03f91eb3d148326b28f992ab9442af7ccc'
+          guard PARENT_IS_APPROVED_HEAD test "$(git rev-parse HEAD^)" = '269afe03c2a3c65b6e4cadac0fa08652562a5609'
+          guard GRANDPARENT_IS_WORKFLOW_COMMIT test "$(git rev-parse HEAD^^)" = '61c2d89ee8ddaa1352f2368e5129b57606ff30b1'
+          guard THIRD_ANCESTOR_IS_TEST_COMMIT test "$(git rev-parse HEAD^^^)" = '967936c20bb1272f8df0dfb1c7ad163bb90ddd11'
+          guard FOURTH_ANCESTOR_IS_QA_HUB test "$(git rev-parse HEAD^^^^)" = '5566dd03f91eb3d148326b28f992ab9442af7ccc'
           guard ONE_FILE_MODIFIED test "$(git diff --name-status HEAD^ HEAD)" = "$(printf 'M\t.github/workflows/pae06-cp0816-r2-webkit-once.yml')"
-          guard TWO_FILE_ADDITIONS_BEFORE_FIX test "$(git diff --name-status HEAD^^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0816-r2-webkit-once.yml')"
-          guard EXACT_SOURCES_FROM_BASE test "$(git diff --name-status HEAD^^^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0816-r2-webkit-once.yml\nA\tqa-hub/r2-tx01-webkit.mjs')"
+          guard WORKFLOW_MODIFIED_FROM_FIRST_RUN test "$(git diff --name-status HEAD^^ HEAD)" = "$(printf 'M\t.github/workflows/pae06-cp0816-r2-webkit-once.yml')"
+          guard WORKFLOW_ADDED_SINCE_TEST_COMMIT test "$(git diff --name-status HEAD^^^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0816-r2-webkit-once.yml')"
+          guard EXACT_SOURCES_FROM_BASE test "$(git diff --name-status HEAD^^^^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0816-r2-webkit-once.yml\nA\tqa-hub/r2-tx01-webkit.mjs')"
           guard CLEAN_WORKTREE test -z "$(git status --porcelain)"
           guard NODE_EXACT_VERSION test "$(node --version)" = 'v22.16.0'
           guard TEST_SCRIPT_SYNTAX node --check qa-hub/r2-tx01-webkit.mjs
@@ -81,6 +83,11 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test -d "$GITHUB_WORKSPACE/qa-hub/node_modules/playwright"
+          test -z "$(git status --porcelain)"
+          mkdir -p "$GITHUB_WORKSPACE/qa-hub/.run"
+          test -d "$GITHUB_WORKSPACE/qa-hub/.run"
+          test -w "$GITHUB_WORKSPACE/qa-hub/.run"
+          git check-ignore -q qa-hub/.run/
           test -z "$(git status --porcelain)"
           mkdir -p "$RUNNER_TEMP/pae06-r2-output"
           chmod 700 "$RUNNER_TEMP/pae06-r2-output"
