@@ -1,0 +1,105 @@
+name: PAE-06 CP08.17-AUTO one-shot persistent WebKit IndexedDB and offline Service Worker
+
+on:
+  push:
+    branches:
+      - pilot/pae06-qa-hub-v1-20261121
+    paths:
+      - .github/workflows/pae06-cp0817-auto-webkit-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pae06-cp0817-auto-webkit-once
+  cancel-in-progress: false
+
+jobs:
+  webkit-cp0817-once:
+    if: github.event.before == '9516b9ec2a99e53ce0b84927a669b0bc0292f6dc' && github.event.created == false && github.event.deleted == false && github.event.forced == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CI: 'true'
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      NPM_CONFIG_FETCH_RETRIES: '0'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout exact commit without persistent credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          set-safe-directory: false
+          fetch-depth: 3
+
+      - name: Configure pinned Node.js 22.16.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+
+      - name: STOP FIRST verify exact add-only history and source
+        run: |
+          set -euo pipefail
+          guard() {
+            local label="$1"; shift
+            if "$@"; then printf 'PREFLIGHT_PASS:%s\n' "$label"
+            else printf '::error::PREFLIGHT_FAIL:%s\n' "$label"; exit 1
+            fi
+          }
+          guard CORRECT_BRANCH test "$GITHUB_REF" = 'refs/heads/pilot/pae06-qa-hub-v1-20261121'
+          guard EXACT_CHECKOUT test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          guard EXACT_PARENT test "$(git rev-parse HEAD^)" = '9516b9ec2a99e53ce0b84927a669b0bc0292f6dc'
+          guard EXACT_GRANDPARENT test "$(git rev-parse HEAD^^)" = '8ec578968894b459be280039a426d31c46331ecd'
+          guard WORKFLOW_ADD_ONLY test "$(git diff --name-status HEAD^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0817-auto-webkit-once.yml')"
+          guard TWO_FILE_ADD_ONLY test "$(git diff --name-status HEAD^^ HEAD)" = "$(printf 'A\t.github/workflows/pae06-cp0817-auto-webkit-once.yml\nA\tqa-hub/cp0817-auto-webkit.mjs')"
+          guard CLEAN_WORKTREE test -z "$(git status --porcelain)"
+          guard NODE_EXACT_VERSION test "$(node --version)" = 'v22.16.0'
+          guard SOURCE_SCRIPT_SYNTAX node --check qa-hub/cp0817-auto-webkit.mjs
+          guard PLAYWRIGHT_EXACT node -e "const p=require('./qa-hub/package.json');const l=require('./qa-hub/package-lock.json');if(p.dependencies.playwright!=='1.65.1'||l.packages['node_modules/playwright-core'].version!=='1.65.1')process.exit(1)"
+          guard PIN_CP0817_SOURCE test "$(git rev-parse HEAD:qa-hub/cp0817-auto-webkit.mjs)" = '60fad0a9bf2fe48e5f5d0969fdf192304087f0bd'
+          guard PIN_QA_HUB test "$(git rev-parse HEAD:qa-hub/qa-hub.mjs)" = '3324dcaea29332c83e329346be66cf16db85b0d1'
+          guard PIN_PACKAGE_LOCK test "$(git rev-parse HEAD:qa-hub/package-lock.json)" = '0feda295284b5e56637aa036821bd24dd074f5ab'
+          guard PIN_APP_JS test "$(git rev-parse HEAD:app.js)" = '6065e80353734648d211b31582ec1462d264e046'
+          guard PIN_SW_JS test "$(git rev-parse HEAD:sw.js)" = 'e6bdb9ed12eb5da3037cd9ef7f083d09a69b9c51'
+          guard PIN_SOURCE_GATE test "$(git rev-parse HEAD:src/test-idb-gate.mjs)" = '7522a67cde97446b220cd06ccaa7c6fc420faf60'
+          guard PIN_SYNTHETIC_BACKUP test "$(git rev-parse HEAD:tests/fixtures/synthetic_export.json)" = 'ff433fe734cc0ae364f0346f4b1a322d3a46d45d'
+          guard PIN_PREVIOUS_WORKFLOW test "$(git rev-parse HEAD:.github/workflows/pae06-cp0816-r2-webkit-once.yml)" = '68a7da21e9dfc69d32fe981f41e9288f6c20fece'
+          printf 'PREFLIGHT_ALL_CHECKS_PASS\n'
+
+      - name: Install only locked Playwright client
+        working-directory: qa-hub
+        run: npm ci --ignore-scripts --no-audit --no-fund --no-progress
+
+      - name: Exactly one offline-network Linux WebKit CP08.17-AUTO
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -d "$GITHUB_WORKSPACE/qa-hub/node_modules/playwright"
+          test -z "$(git status --porcelain)"
+          mkdir -p "$GITHUB_WORKSPACE/qa-hub/.run"
+          git check-ignore -q qa-hub/.run/
+          test -w "$GITHUB_WORKSPACE/qa-hub/.run"
+          test -z "$(git status --porcelain)"
+          mkdir -p "$RUNNER_TEMP/pae06-cp0817-output"
+          chmod 700 "$RUNNER_TEMP/pae06-cp0817-output"
+          docker run --rm \
+            --network none \
+            --read-only \
+            --cap-drop=ALL \
+            --security-opt=no-new-privileges \
+            --pids-limit=384 \
+            --memory=3g \
+            --cpus=2 \
+            --shm-size=768m \
+            --user "$(id -u):$(id -g)" \
+            --env HOME=/tmp \
+            --env CI=true \
+            --env PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+            --tmpfs /tmp:rw,nosuid,size=768m,mode=1777 \
+            --volume "$GITHUB_WORKSPACE:/repo:ro" \
+            --volume "$RUNNER_TEMP/pae06-cp0817-output:/repo/qa-hub/.run:rw" \
+            --workdir /repo/qa-hub \
+            mcr.microsoft.com/playwright:v1.65.1-noble \
+            node cp0817-auto-webkit.mjs
