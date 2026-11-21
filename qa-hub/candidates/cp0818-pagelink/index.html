@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; worker-src 'self'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>PAE-06 CP08.18-A · Учебные PDF</title>
+<link rel="stylesheet" href="./ui.css">
+<script type="module" src="./viewer.mjs"></script>
+</head>
+<body>
+<main class="shell">
+<header><div class="brand"><strong>PAE-06</strong><span>Медицинский архив · PDF PageLink</span></div><div class="test">СИНТЕТИЧЕСКИЙ TEST · CP08.18-A</div></header>
+<section class="intro"><h1>Учебные Mac PDF</h1><p>Настоящие PDF-страницы. Проверяется исходный SHA-256 и количество страниц в PDF.js. Это не импорт с вашего Mac, не медицинский архив и не FINAL.</p></section>
+<div class="layout"><aside><h2>Документы</h2><nav aria-label="Учебные документы"><a id="link-a" href="?doc=qa-a&amp;page=1">QA-A <small>1 страница · учебный Mac PDF</small></a><a id="link-b" href="?doc=qa-b&amp;page=1">QA-B <small>2 страницы · учебный Mac PDF</small></a></nav><p class="note">Связь с пациентом не подтверждена. Данные не сохраняются и не синхронизируются.</p></aside>
+<section class="document" aria-label="Просмотр PDF"><div class="dochead"><div><h2 id="title">Проверка документа…</h2><p id="status" role="status" aria-live="polite" data-state="loading">Загрузка учебного PDF</p></div><span class="verified" id="gate">Только чтение</span></div>
+<div class="controls"><a id="prev" aria-label="Предыдущая страница">← Назад</a><span id="pages">Страница —</span><a id="next" aria-label="Следующая страница">Далее →</a></div>
+<div class="canvasbox" id="canvasbox"><canvas id="pageCanvas" aria-label="Реальная страница PDF"></canvas></div>
+<div class="metadata"><div><strong>SHA-256 оригинала</strong><code id="sha">—</code></div><div><strong>Источник</strong><span id="origin">Учебный образец из TEST</span></div></div></section></div>
+<footer>TEST ONLY · Без реальных медицинских записей · IndexedDB не открывается · Security/Release NO-GO</footer>
+</main>
+</body>
+</html>

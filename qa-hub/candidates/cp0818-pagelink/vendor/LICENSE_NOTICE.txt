@@ -1,0 +1,5 @@
+PAE-06 v0.3 third-party component notices
+- pdfjs-dist-LICENSE.txt
+- tesseract-js-LICENSE.txt
+- tesseract-js-core-LICENSE.txt
+- worker.min.js.LICENSE.txt
