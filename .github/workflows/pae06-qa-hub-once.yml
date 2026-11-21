@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   qa-once:
-    if: github.event.before == '1f0060c8f36125b606e8d7b0fe4549d7a538bb71' && github.event.created == false && github.event.deleted == false && github.event.forced == false
+    if: github.event.before == '43764f19eb83c24514e3edc8ca5aa37e33cae61f' && github.event.created == false && github.event.deleted == false && github.event.forced == false
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -42,9 +42,9 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF" = 'refs/heads/pilot/pae06-qa-hub-v1-20261121'
           test "$PWD" = "$GITHUB_WORKSPACE"
-          test "$(git rev-parse HEAD^)" = '1f0060c8f36125b606e8d7b0fe4549d7a538bb71'
+          test "$(git rev-parse HEAD^)" = '43764f19eb83c24514e3edc8ca5aa37e33cae61f'
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          expected="$(printf 'A\t.github/workflows/pae06-qa-hub-once.yml')"
+          expected="$(printf 'M\t.github/workflows/pae06-qa-hub-once.yml')"
           actual="$(git diff --name-status HEAD^ HEAD)"
           test "$actual" = "$expected"
           test -z "$(git status --porcelain)"
@@ -68,8 +68,17 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test -d "$GITHUB_WORKSPACE/qa-hub/node_modules/playwright"
           test -z "$(git status --porcelain)"
+          test -d "$GITHUB_WORKSPACE/qa-hub"
+          test -f "$GITHUB_WORKSPACE/qa-hub/.gitignore"
+          mkdir -p "$GITHUB_WORKSPACE/qa-hub/.run"
+          test -d "$GITHUB_WORKSPACE/qa-hub/.run"
+          test -w "$GITHUB_WORKSPACE/qa-hub/.run"
+          git check-ignore -q qa-hub/.run/
+          test -z "$(git status --porcelain)"
           mkdir -p "$RUNNER_TEMP/pae06-qa-output"
           chmod 700 "$RUNNER_TEMP/pae06-qa-output"
+          test -d "$RUNNER_TEMP/pae06-qa-output"
+          test -w "$RUNNER_TEMP/pae06-qa-output"
           docker run --rm \
             --network none \
             --read-only \
