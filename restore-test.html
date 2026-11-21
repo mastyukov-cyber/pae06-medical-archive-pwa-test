@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light"><meta name="theme-color" content="#173d61">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Восстановление учебной копии — PAE-06 TEST</title><link rel="stylesheet" href="./restore-test.css">
+</head><body><main class="shell">
+<header class="hero"><div class="eyebrow">PAE-06 · CP08.15 · ЛОКАЛЬНЫЙ TEST-КАНДИДАТ</div>
+<h1>Восстановление копии</h1><p>Только учебные PDF QA-A и QA-B. Проверка целостности, предварительный просмотр и отдельное подтверждение — без удаления и перезаписи.</p>
+<p class="disclaimer">Реальные медицинские документы не принимаются. Все действия выполняются в браузере без передачи JSON на сервер.</p></header>
+<section class="card"><h2>1. Выберите учебную копию</h2>
+<div class="buttons"><label class="upload">Выбрать JSON-файл<input id="backupFile" type="file" accept=".json,application/json"></label>
+<button id="sample" class="soft" type="button">Открыть пример QA-A + QA-B</button></div>
+<p id="fileName" class="small">Копия ещё не выбрана</p>
+<div id="sourceCard" hidden><p>Проверенный состав:</p><ul id="documents"></ul>
+<label class="check"><input type="checkbox" id="storageConsent"><span>Понимаю, что <b>проверка существующей базы</b> может создать пустую синтетическую IndexedDB. Отмена не удалит эту пустую схему.</span></label>
+<button id="previewButton" class="primary" disabled>Проверить и показать изменения</button></div></section>
+<section id="previewCard" class="card" hidden><h2>2. Предварительный просмотр</h2><p>PDF проверены по SHA-256; существующие записи также проверяются перед изменениями.</p>
+<div class="stats"><div><strong id="countAll">0</strong><span>В копии</span></div><div><strong id="countNew">0</strong><span>К добавлению</span></div><div><strong id="countAlready">0</strong><span>Уже есть</span></div></div>
+<p class="small">Удалений: <b>0</b> · Перезаписей: <b>0</b></p>
+<label class="check"><input type="checkbox" id="writeConsent"><span>Я отдельно подтверждаю добавление только выбранных учебных PDF в эту синтетическую тестовую базу.</span></label>
+<button id="commitButton" class="primary" disabled>Подтвердить восстановление</button></section>
+<section id="doneCard" class="card" hidden><h2>3. Результат</h2><p id="doneText"></p><p>После подключения этого экрана к основной TEST PWA документы можно просмотреть в журнале. Перезагрузка страницы не должна удалять их.</p></section>
+<div id="message" class="message" role="status" aria-live="polite">Подготовка...</div>
+<button type="button" class="cancel" id="cancel">Отменить / выбрать другую копию</button>
+<footer>Сборка для проверки функции · НЕ ОПУБЛИКОВАНО · R10.1 core · Safari E2E НЕ ВЫПОЛНЕН</footer>
+</main><script type="module" src="./restore-test.mjs"></script></body></html>

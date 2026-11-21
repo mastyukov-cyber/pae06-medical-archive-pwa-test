@@ -1,10 +1,10 @@
 "use strict";
 /* PAE-06 CP08.8 TEST: atomic stage; activation requires natural lifecycle or one-client consent. */
-const CACHE="pae06-cp0814-synth-assets-v1";
-const VERSION="v0.8.14-test.1",BUILD_ID="20261119-05";
-const OLD_CACHES=new Set(["pae06-cp0813-synth-assets-v1","pae06-cp0811-synth-assets-v1","pae06-cp0810-synth-assets-v1","pae06-cp089-synth-assets-v1","pae06-cp083-synth-assets-v1","pae06-cp087-synth-assets-v1","pae06-cp088-synth-assets-v1"]);
+const CACHE="pae06-cp0815-restore-assets-v1";
+const VERSION="v0.8.15-test.0",BUILD_ID="20261121-restore-candidate-01";
+const OLD_CACHES=new Set(["pae06-cp0814-synth-assets-v1","pae06-cp0813-synth-assets-v1","pae06-cp0811-synth-assets-v1","pae06-cp0810-synth-assets-v1","pae06-cp089-synth-assets-v1","pae06-cp083-synth-assets-v1","pae06-cp087-synth-assets-v1","pae06-cp088-synth-assets-v1"]);
 const BASE=new URL("./",self.registration.scope);
-const FILES=["./","./index.html","./style.css","./app.js","./catalog.js","./mac-derived-adapter.mjs","./mac-preview.mjs","./mac-bridge.mjs","./mac-bridge-view.mjs","./qa/qa_public_key.json","./qa/signed_transfer.json","./manifest.webmanifest","./icon-192.png","./icon-512.png","./fixtures/PAE06_QA_A_1_PAGE.pdf","./fixtures/PAE06_QA_B_2_PAGES.pdf","./assets/qa-a-page-1.webp","./assets/qa-b-page-1.webp","./assets/qa-b-page-2.webp"];
+const FILES=["./restore-test.html","./restore-test.css","./restore-test.mjs","./src/restore.mjs","./src/test-idb-gate.mjs","./tests/fixtures/synthetic_export.json","./","./index.html","./style.css","./app.js","./catalog.js","./mac-derived-adapter.mjs","./mac-preview.mjs","./mac-bridge.mjs","./mac-bridge-view.mjs","./qa/qa_public_key.json","./qa/signed_transfer.json","./manifest.webmanifest","./icon-192.png","./icon-512.png","./fixtures/PAE06_QA_A_1_PAGE.pdf","./fixtures/PAE06_QA_B_2_PAGES.pdf","./assets/qa-a-page-1.webp","./assets/qa-b-page-1.webp","./assets/qa-b-page-2.webp"];
 const ALLOWED=new Set(FILES.map(x=>new URL(x,BASE).href));
 const INDEX=new URL("./index.html",BASE);
 self.addEventListener("install",e=>e.waitUntil((async()=>{
