@@ -20,7 +20,7 @@ const PINS=Object.freeze({
   'restore-test.mjs':'cf7adb356fadbaa10d11fc44257e50c80de69a2f',
   'src/restore.mjs':'2cdbc7223f96978d4cc823ad6ef434ccb8b76ce6',
   'src/test-idb-gate.mjs':'7522a67cde97446b220cd06ccaa7c6fc420faf60',
-  'tests/fixtures/synthetic_export.json':'ff433fe734cc0ae364f0346f4b1a322d3a46d45',
+  'tests/fixtures/synthetic_export.json':'ff433fe734cc0ae364f0346f4b1a322d3a46d45d',
   'release.json':'1ebfaba39fc115ef46a026aff24369f452f847b7'
 });
 const ACCESS=new Set(Object.keys(PINS));
