@@ -42,3 +42,6 @@
 .macbridge-list{display:grid;gap:12px;margin-top:12px}
 .macbridge-card{display:grid;gap:6px;border:1px solid #c7dbe8;background:#f7fafc;border-radius:12px;padding:12px;overflow-wrap:anywhere}
 .macbridge-card span{font-size:12px;color:#516b82;line-height:1.5}
+
+/* CP08.25 navigation, existing styles unchanged. */
+.archive-navigation{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 17px}.archive-navigation>a{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.archive-navigation>a:focus-visible{outline:3px solid #e59d57;outline-offset:3px}.archive-navigation>span{font-size:12px;color:#516b82;line-height:1.4}

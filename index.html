@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru" data-pwa-build="20261121-restore-candidate-01"><head>
+<html lang="ru" data-pwa-build="20261122-cp0825-navigation-01"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#16385c"><meta name="color-scheme" content="light">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-src blob:; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
@@ -11,7 +11,7 @@
 <main><section class="versionbar" aria-label="Текущая версия приложения">
 <div class="versioncopy"><strong id="versionText">Версия не определена — проверьте загрузку приложения</strong><span id="buildText">Идентификатор сборки неизвестен</span></div>
 <div class="versionright"><span id="versionState" role="status" aria-live="polite">Актуальность не проверена</span><button type="button" class="checkVersion" id="checkVersion">Проверить версию</button><button id="applyUpdate" class="secondary" type="button" hidden>Применить готовое обновление</button></div>
-</section><section class="hero"><div><span class="tag">ТОЛЬКО ВЫМЫШЛЕННЫЕ ДАННЫЕ</span><h2>Мой архив <span id="count">0</span></h2><p>Изолированная проверка просмотра документов на iPhone. Никакого доступа к вашему медицинскому архиву.</p></div></section>
+</section><nav class="archive-navigation" aria-label="Навигация по медицинскому архиву"><a class="secondary" href="./qa-hub/candidates/cp0823-r1-bplus/index.html">▥ Анализы B+</a><a class="secondary" href="./qa-hub/candidates/cp0823-export/index.html">⇧ Предпросмотр экспорта</a><span>Только учебные данные. Настоящие PDF/XLSX/CSV не создаются.</span></nav><section class="hero"><div><span class="tag">ТОЛЬКО ВЫМЫШЛЕННЫЕ ДАННЫЕ</span><h2>Мой архив <span id="count">0</span></h2><p>Изолированная проверка просмотра документов на iPhone. Никакого доступа к вашему медицинскому архиву.</p></div></section>
 <section class="actions"><button class="primary" id="addA">Добавить QA-A</button><button class="primary" id="addB">Добавить QA-B</button><label class="filebutton">Выбрать тестовый PDF<input id="file" type="file" accept="application/pdf,.pdf"></label></section>
 <div class="status" id="status" role="status" aria-live="polite">Подготовка локального хранилища…</div>
 <div class="workspace"><section class="sidebar"><div class="search"><label for="search">Поиск документов</label><input id="search" type="search" placeholder="Название, QA-A или QA-B (не OCR)" autocomplete="off"/></div><div class="catalogcontrols"><label for="sortMode">Сортировка списка</label><select id="sortMode" aria-label="Сортировка учебных документов"><option value="newest">Сначала добавленные недавно</option><option value="oldest">Сначала добавленные раньше</option><option value="title">По названию</option></select><span id="matchCount" class="small" role="status">Найдено: 0</span></div><div id="items" class="items"></div></section>
@@ -29,6 +29,6 @@
 <p id="macBridgeStatus" role="status" class="small">Проверка учебной подписи…</p>
 <div id="macBridgeList" class="macbridge-list"></div>
 </details>
-</main><footer>CP08.15 · v0.8.15-test.0 · READ-ONLY PWA TEST · NO REAL DATA · NO CLOUD SYNC</footer></div>
+</main><footer>CP08.25 · v0.8.25-test.0 · READ-ONLY PWA TEST · NO REAL DATA · NO CLOUD SYNC</footer></div>
 <script src="catalog.js" defer></script><script src="app.js" defer></script><script type="module" src="mac-preview.mjs"></script>
 <script type="module" src="mac-bridge-view.mjs"></script></body></html>
