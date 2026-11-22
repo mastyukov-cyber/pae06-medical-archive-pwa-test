@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="theme-color" content="#f6f9fd">
+  <title>PAE-06 · Анализы · B+ Medical Hybrid · TEST</title>
+  <link rel="stylesheet" href="../cp0820-bplus/styles.css">
+  <script type="module" src="../cp0822-bplus-contract/app.mjs"></script>
+  <script type="module" src="./export-launch.mjs"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Разделы медицинского архива">
+      <div class="brand"><div class="brand-mark">✚</div><div>МедАрхив<small>PAE-06 · Medical Archive</small></div></div>
+      <div class="side-section">РАЗДЕЛЫ</div>
+      <div class="nav-item disabled"><span>▦</span> Обзор</div>
+      <div class="nav-item disabled"><span>▤</span> Документы</div>
+      <div class="nav-item active" aria-current="page"><span>▥</span> Анализы <span class="active-dot"></span></div>
+      <div class="nav-item disabled"><span>◷</span> История болезни</div>
+      <div class="nav-item disabled"><span>♧</span> Врачи и визиты</div>
+      <div class="nav-item disabled"><span>◫</span> Исследования</div>
+      <div class="nav-bottom"><div class="privacy-icon">⌁</div><div><strong>Локальный прототип</strong><small>Без сети и реальных данных</small></div></div>
+    </aside>
+    <main class="main" id="main">
+      <header class="topbar">
+        <div class="breadcrumbs">Медицинский архив <span>/</span> <strong>Анализы</strong></div>
+        <div class="user-meta"><span class="test-pill">● СИНТЕТИЧЕСКИЕ ДАННЫЕ</span><div class="avatar">Д</div></div>
+      </header>
+      <div class="content">
+        <div class="page-title"><div><div class="eyebrow">ЛАБОРАТОРНЫЕ ИССЛЕДОВАНИЯ</div><h1>Анализы <span class="title-flower">✳</span></h1><p>Все результаты, динамика и сравнение — в одном месте</p></div><button id="openExport" class="primary-btn" type="button"><span>⇧</span> Экспорт анализов</button></div>
+        <div class="demo-warning" role="note"><span>ⓘ</span> Демонстрационные данные. Результаты вымышлены, медицинские выводы не формируются. Непроверенный OCR исключён.</div>
+        <div class="filter-panel">
+          <div class="filter-top"><span class="group-title">Группы анализов</span><div class="filter-meta" id="filterMeta">—</div></div>
+          <div id="groupChips" class="group-chips" aria-label="Группы анализов"></div>
+          <div class="filter-bottom">
+            <label class="search-wrap"><span>⌕</span><input id="search" type="search" placeholder="Поиск показателя" autocomplete="off" aria-label="Поиск показателя"></label>
+            <label class="filter-label">Период <select id="period"><option value="all">Вся история</option><option value="12m">12 месяцев</option><option value="6m">6 месяцев</option></select></label>
+            <label class="filter-label">Лаборатория <select id="lab"><option value="all">Все лаборатории</option></select></label>
+            <button type="button" class="soft-btn" id="favoritesToggle" aria-pressed="false">☆ Избранное</button>
+            <label class="filter-label">Порядок <select id="sort"><option value="name">По названию</option><option value="deviation">Сначала отклонения</option></select></label>
+          </div>
+        </div>
+        <div class="section-heading"><div><h2>Показатели и динамика</h2><p id="visibleSummary">Проверенные учебные результаты</p></div><div class="mode-switch" role="tablist" aria-label="Режим просмотра анализов"><button type="button" data-mode="single" role="tab" aria-selected="true" class="on">Один показатель</button><button type="button" data-mode="multiple" role="tab" aria-selected="false">Несколько</button><button type="button" data-mode="all" role="tab" aria-selected="false">Все анализы</button></div></div>
+        <section class="study-grid" aria-label="Выбор показателя и график">
+          <div class="analytes card"><div class="card-head"><span>ПОКАЗАТЕЛИ</span><small id="analyteCount">—</small></div><div id="analyteList" class="analyte-list"></div></div>
+          <div class="detail-panel card"><div id="chartPanel" class="chart-panel"></div></div>
+        </section>
+        <section class="table-card card" aria-labelledby="datesHeading">
+          <div class="table-header"><div><h2 id="datesHeading">Результаты по датам</h2><p>Показатели по строкам · даты исследований по столбцам</p></div><div class="table-actions"><label>Дата A <select id="dateA" aria-label="Дата A для сравнения"></select></label><span class="vs">↔</span><label>Дата B <select id="dateB" aria-label="Дата B для сравнения"></select></label></div></div>
+          <div class="table-legend"><span><i class="dot normal"></i> В референсе</span><span><i class="dot out"></i> Вне референса источника</span><span>Δ = A − B · только сопоставимые результаты</span></div>
+          <div id="resultsGrid" class="table-scroll" tabindex="0" aria-label="Таблица результатов по датам с горизонтальной прокруткой"></div>
+          <div class="table-foot"><span>Закреплены названия и даты · Нажмите значение для подробностей</span><span id="tableCount">—</span></div>
+        </section>
+        <footer class="footer"><span>PAE-06 · B+ Medical Hybrid · CP08.20 · ИЗОЛИРОВАННЫЙ UI-КАНДИДАТ</span><span>Не содержит медицинских рекомендаций · Нет записи данных</span></footer>
+      </div>
+    </main>
+  </div>
+  <dialog id="resultDialog" class="result-dialog" aria-labelledby="resultDialogTitle"><div class="modal-head"><div><div class="eyebrow">ПОДРОБНОСТИ РЕЗУЛЬТАТА</div><h2 id="resultDialogTitle">—</h2></div><button class="icon-close" id="closeResult" type="button" aria-label="Закрыть">✕</button></div><div id="resultDetail"></div><div class="modal-actions"><button class="soft-btn" id="sourceBtn" type="button">◫ Открыть оригинал</button><button class="primary-btn" id="resultExportBtn" type="button">Экспорт результата</button></div></dialog>
+  <dialog id="exportDialog" class="export-dialog" aria-labelledby="exportDialogTitle"><div class="modal-head"><div><div class="eyebrow">ЛАБОРАТОРНЫЕ РЕЗУЛЬТАТЫ</div><h2 id="exportDialogTitle">Экспорт анализов</h2><p>Настройка → предпросмотр → сохранение (позже)</p></div><button class="icon-close" id="closeExport" type="button" aria-label="Закрыть">✕</button></div><div class="export-body"><div class="export-config"><label>Что экспортировать<select id="exScope"><option value="one">Один результат</option><option value="indicator">История выбранного показателя</option><option value="group">Группа анализов</option><option value="selection">Выбранные показатели</option><option value="dates">Выбранные даты A и B</option><option value="all">Вся история</option><option value="doctor">Подборка «Для врача»</option></select></label><label>Период<select id="exPeriod"><option value="all">Вся история</option><option value="latest">Последнее исследование</option><option value="3y">Последние 3 года</option><option value="custom">Произвольные даты</option></select></label><div class="custom-dates" id="customDates" hidden><label>От<input type="date" id="exFrom" value="2025-01-01"></label><label>До<input type="date" id="exTo" value="2026-11-22"></label></div><label>Формат<select id="exFormat"><option value="PDF">PDF</option><option value="XLSX">Excel (.xlsx)</option><option value="CSV">CSV</option></select></label><label>Шаблон<select id="exTemplate"><option value="doctor">Краткий для врача</option><option value="full">Полная история</option></select></label><label>Лаборатория<select id="exLab"><option value="all">Все лаборатории</option></select></label><div class="export-options"><strong>Дополнительные параметры</strong><label class="check"><input type="checkbox" id="exCharts" checked> Включить графики</label><label class="check"><input type="checkbox" id="exPersonal"> Включить персональные данные</label><label class="check"><input type="checkbox" id="exOriginal"> Приложить оригинальные PDF (только явно)</label></div><div class="export-options"><strong>Выбор показателей</strong><div id="exSelected" class="ex-selected"></div><strong>Выбор дат</strong><div id="exDates" class="ex-selected"></div></div><button type="button" id="buildPreview" class="primary-btn wide">Обновить предпросмотр</button></div><div class="export-preview"><div class="preview-head"><div><strong>Предпросмотр состава</strong><small>Реальные файлы не формируются</small></div><span class="preview-badge" id="previewFormat">PDF · ДЕМО</span></div><div id="previewContent" class="paper-preview"></div><div class="preview-footer"><div id="exportSummary"></div><button class="primary-btn" type="button" disabled title="Недоступно до реализации настоящего экспорта">Сохранить / Передать · пока недоступно</button></div></div></div><p class="export-note">Это интерактивный предпросмотр синтетических строк, не реальный PDF/XLSX/CSV. Точные страницы, размер файла и системная передача будут доступны после отдельного этапа QA. Метаданные оригиналов могут содержать идентификаторы.</p></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
