@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="theme-color" content="#102e39">
+  <title>PAE-06 · Анализы · CP08.19</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Разделы медицинского архива">
+      <div class="logo"><span class="brand-symbol">✳</span><span>PAE-06<br><small>Medical Archive</small></span></div>
+      <div class="sidebar-name">Медицинский архив</div>
+      <div class="sidebar-entry muted">▣ &nbsp; Документы</div>
+      <div class="sidebar-entry active" aria-current="page">▥ &nbsp; Анализы</div>
+      <div class="sidebar-entry muted">◷ &nbsp; История</div>
+      <div class="sidebar-entry muted">◫ &nbsp; Экспорт</div>
+      <div class="sidebar-foot">CP08.19 · SOURCE ONLY<br>Локальный прототип · синтетика</div>
+    </aside>
+    <main class="main" id="main">
+      <header class="top">
+        <div><p class="eyebrow">МЕДИЦИНСКИЙ АРХИВ / АНАЛИЗЫ</p><h1>Лабораторные показатели</h1><p class="subtitle">История результатов, сравнения и происхождение данных</p></div>
+        <div class="testtag" aria-label="Демонстрационные данные">СИНТЕТИЧЕСКИЕ ДАННЫЕ</div>
+      </header>
+      <div class="notice" role="note"><strong>Учебная демонстрация.</strong> Значения и референсы вымышлены. Не используйте для медицинских решений. Непроверенные OCR-записи не попадают в графики.</div>
+      <section class="overview" id="overview" aria-label="Сводка">
+        <div class="stat"><small>Подтверждённых записей</small><strong id="statRows">—</strong><span>в учебной модели</span></div>
+        <div class="stat"><small>Показателей</small><strong id="statAnalytes">—</strong><span>с подтверждёнными результатами</span></div>
+        <div class="stat"><small>В карантине</small><strong id="statRejected">—</strong><span>не участвуют в анализе</span></div>
+      </section>
+      <section class="panel" aria-label="Режим просмотра">
+        <div class="row-head"><div><h2>Просмотр результатов</h2><p class="secondary">Все графики используют только проверенную учебную выборку</p></div>
+          <label class="picker">Период <select id="period"><option value="all">Вся история</option><option value="12m">12 месяцев</option><option value="6m">6 месяцев</option></select></label>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Вид анализа">
+          <button type="button" class="tab selected" role="tab" id="tab-single" aria-selected="true" data-tab="single">Один показатель</button>
+          <button type="button" class="tab" role="tab" id="tab-compare" aria-selected="false" data-tab="compare">Сравнение</button>
+          <button type="button" class="tab" role="tab" id="tab-all" aria-selected="false" data-tab="all">Все анализы</button>
+        </div>
+        <div id="content" aria-live="polite"></div>
+      </section>
+      <section class="source-note"><strong>Правила данных:</strong> Mac-first → проверка человеком → подтверждённая запись → клиент PWA. Никакого прямого импорта OCR, автоматических медицинских выводов и скрытой отправки. Отдельный модуль, не подключён к основной базе.</section>
+      <footer>PAE-06 CP08.19 · Изолированный SOURCE ONLY · Не опубликовано · DATA SAFE / FINAL NO-GO</footer>
+    </main>
+  </div>
+</body>
+</html>
