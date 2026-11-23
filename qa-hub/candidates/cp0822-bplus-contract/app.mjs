@@ -1,8 +1,13 @@
 /* PAE-06 CP08.22 isolated B+ integration. No network, persistence or real Mac authorization. */
 import {ANALYTES} from '../cp0819-labs/fixture.mjs';
 import {ANALYTE_META,periodRows,series} from '../cp0819-labs/lab-core.mjs';
-import {accepted,excludedCount} from './data-source.mjs';
+import {accepted as candidateRows,excludedCount,evidence} from './data-source.mjs';
 import {compareDateResults} from './adapter.mjs';
+// Demo SHA labels and "human-confirmed" rows do not confer clinical authority.
+const syntheticPreviewOnly=evidence?.syntheticOnly===true&&evidence.readOnly===true&&
+ evidence.realMacIdentityVerified===false&&evidence.originalPdfBytesVerified===false&&
+ evidence.clinicalAuthority===false;
+const accepted=syntheticPreviewOnly?candidateRows:Object.freeze([]);
 const $=id=>document.getElementById(id);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=(n,d=1)=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:d}).format(n);
@@ -66,7 +71,7 @@ function clickHandler(e){const btn=e.target.closest('[data-group],[data-mode],[d
 function render(){const av=availableAnalytes(),visibleRows=allFilteredRows();
  $('groupChips').querySelectorAll('button').forEach(b=>{const on=b.dataset.group===state.group;b.classList.toggle('selected',on);b.setAttribute('aria-pressed',String(on))});
  $('favoritesToggle').classList.toggle('pressed',state.onlyFav);$('favoritesToggle').setAttribute('aria-pressed',String(state.onlyFav));$('favoritesToggle').textContent=state.onlyFav?'★ Избранное':'☆ Избранное';
- $('filterMeta').textContent=visibleRows.length+' проверенных результатов · '+excludedCount+' исключено';$('visibleSummary').textContent='Последние значения и вся история по датам';
+ $('filterMeta').textContent=visibleRows.length+' учебных результатов · '+excludedCount+' исключено';$('visibleSummary').textContent='Учебная динамика · личность Mac и PDF не проверены';
  document.querySelectorAll('[data-mode]').forEach(b=>{const on=b.dataset.mode===state.mode;b.classList.toggle('on',on);b.setAttribute('aria-selected',String(on))});
  $('analyteCount').textContent=av.length+' из '+ANALYTES.length;
  $('analyteList').innerHTML=av.length?av.map(a=>{const r=newest(a.code),active=a.code===state.selected;return `<div class="analyte-row ${active?'selected':''}"><button type="button" class="star ${state.favorites.has(a.code)?'chosen':''}" aria-label="${state.favorites.has(a.code)?'Убрать из избранного':'В избранное'}: ${esc(a.name)}" data-action="favorite" data-code="${esc(a.code)}">${state.favorites.has(a.code)?'★':'☆'}</button><button type="button" class="analyte-text" data-action="choose" data-code="${esc(a.code)}" style="background:transparent;border:0;text-align:left;padding:0"><div class="analyte-name">${esc(a.name)}</div><div class="analyte-sub">${esc(a.group)}</div></button><div class="analyte-value ${outside(r)?'out':''}">${r?fmt(r.value):'—'}<small>${esc(r?.unit||'')}</small></div></div>`}).join(''):'<div class="chart-empty">Нет показателей по фильтру</div>';
@@ -74,11 +79,11 @@ function render(){const av=availableAnalytes(),visibleRows=allFilteredRows();
  renderChart();renderTable();
 }
 function renderChart(){const code=state.selected,meta=ANALYTE_META[code],r=rowsFor(code),latest=r.at(-1),prev=r.at(-2),delta=calcDelta(latest,prev);
- if(!latest){$('chartPanel').innerHTML='<div class="chart-empty">Нет подтверждённых результатов за выбранный период</div>';return}
+ if(!latest){$('chartPanel').innerHTML='<div class="chart-empty">Нет учебных результатов за выбранный период</div>';return}
  const metric=(label,value,unit,foot,klass='')=>`<div class="metric-card"><small>${esc(label)}</small><strong class="${klass}">${esc(value)} <em>${esc(unit||'')}</em></strong><span class="metric-foot">${esc(foot||'')}</span></div>`;
  const extra=state.mode==='multiple'?`<div class="multi-results">${[...state.chosen].map(c=>{const n=newest(c);return `<button class="multi-chip" type="button" data-action="choose" data-code="${esc(c)}">${esc(ANALYTE_META[c].name)} · ${n?fmt(n.value)+' '+n.unit:'нет данных'}</button>`}).join('')}</div>`:state.mode==='all'?'<div class="multi-results"><span class="multi-chip">Все показатели доступны в таблице ниже</span></div>':'';
  $('chartPanel').innerHTML=`<div class="chart-top"><div><div class="chart-title">${esc(meta.name)}</div><div class="chart-sub">${esc(meta.group)} · ${esc(latest.method)} · ${esc(latest.specimen)}</div></div><div class="chart-tools"><span class="chart-tool active">Динамика</span><span class="chart-tool">${r.length} точек</span></div></div>
- <div class="metric-cards">${metric('ПОСЛЕДНИЙ РЕЗУЛЬТАТ',fmt(latest.value),latest.unit,dateFmt(latest.collectedOn),outside(latest)?'value-down':'')}${metric('ПРЕДЫДУЩИЙ',prev?fmt(prev.value):'—',prev?.unit||'',prev?dateFmt(prev.collectedOn):'Нет данных')}${metric('ИЗМЕНЕНИЕ',delta.value,delta.reason==='Нет пары'||delta.reason==='Несопоставимо'?'':latest.unit,delta.reason==='Нет пары'?'Нет сравнимой пары':delta.reason==='Несопоставимо'?'Нельзя сравнить': 'По сравнению с предыдущим')}${metric('РЕФЕРЕНС',fmt(latest.reference.low)+'–'+fmt(latest.reference.high),latest.unit,'Лаборатория последнего результата')}</div>${plotSVG(r,code)}<div class="chart-foot"><span>Измерения по фактическим датам · <strong>${esc(latest.lab)}</strong></span><span>${outside(latest)?'● Вне референса источника':'● В референсе источника'} · без медицинской интерпретации</span></div>${extra}`;
+ <div class="metric-cards">${metric('ПОСЛЕДНИЙ РЕЗУЛЬТАТ',fmt(latest.value),latest.unit,dateFmt(latest.collectedOn),outside(latest)?'value-down':'')}${metric('ПРЕДЫДУЩИЙ',prev?fmt(prev.value):'—',prev?.unit||'',prev?dateFmt(prev.collectedOn):'Нет данных')}${metric('ИЗМЕНЕНИЕ',delta.value,delta.reason==='Нет пары'||delta.reason==='Несопоставимо'?'':latest.unit,delta.reason==='Нет пары'?'Нет сравнимой пары':delta.reason==='Несопоставимо'?'Нельзя сравнить': 'По сравнению с предыдущим')}${metric('РЕФЕРЕНС',fmt(latest.reference.low)+'–'+fmt(latest.reference.high),latest.unit,'Лаборатория последнего результата')}</div>${plotSVG(r,code)}<div class="chart-foot"><span>Учебные значения по датам примера · <strong>${esc(latest.lab)}</strong></span><span>${outside(latest)?'● Вне референса источника':'● В референсе источника'} · без медицинской интерпретации</span></div>${extra}`;
 }
 function plotSVG(rows,code){if(!rows.length)return'';const W=760,H=218,L=48,R=18,T=12,B=35;
  const nums=rows.map(r=>r.value),lo=Math.min(...nums),hi=Math.max(...nums),pad=Math.max((hi-lo)*.20,.4),min=lo-pad,max=hi+pad;
@@ -100,7 +105,7 @@ function renderTable(){const host=$('resultsGrid'),prevX=host.scrollLeft||state.
  host.scrollLeft=prevX;host.scrollTop=prevY;host.onscroll=()=>{state.tableScrollX=host.scrollLeft;state.tableScrollY=host.scrollTop};$('tableCount').textContent=codes.length+' показателей · '+dateList.length+' дат';
 }
 function openResult(r){state.detailRow=r;const meta=ANALYTE_META[r.code];$('resultDialogTitle').textContent=meta.name+' · '+fmt(r.value)+' '+r.unit;
- const pairs=[['Дата исследования',dateFmt(r.collectedOn)],['Время забора','Не указано в учебном источнике'],['Лаборатория',r.lab],['Референс источника',fmt(r.reference.low)+'–'+fmt(r.reference.high)+' '+r.unit],['Методика',r.method],['Материал',r.specimen],['Проверка','Учебная human-confirmed запись'],['Документ-источник',r.source.documentId],['Оценка по интервалу',outside(r)?'Вне интервала источника':'В интервале источника']];
+ const pairs=[['Дата исследования',dateFmt(r.collectedOn)],['Время забора','Не указано в учебном источнике'],['Лаборатория',r.lab],['Референс источника',fmt(r.reference.low)+'–'+fmt(r.reference.high)+' '+r.unit],['Методика',r.method],['Материал',r.specimen],['Статус источника','Синтетика · Mac не аттестован'],['SHA-256 оригинала','Только учебная метка · байты PDF не проверены'],['Документ-источник',r.source.documentId],['Оценка по интервалу',outside(r)?'Вне интервала источника':'В интервале источника']];
  $('resultDetail').innerHTML='<div class="result-dl">'+pairs.map(([label,value])=>`<div><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`).join('')+'</div><p style="font-size:11px;color:#8da0b5;margin-top:12px">Нет диагноза или медицинского заключения. PDF доступен только в будущей интеграции по отдельному действию.</p>';
  $('resultDialog').showModal();
 }
