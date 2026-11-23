@@ -68,7 +68,7 @@ function base64(bytes){const a=new Uint8Array(bytes);let b="";for(let i=0;i<a.le
 async function exportBackup(){try{const docs=[];for(const r of await allRecords()){const state=await classify(r);if(!state.ok)throw new Error("Целостность изменилась");docs.push({id:r.id,sha256:r.sha256,sourceEncoding:r.sourceEncoding,bytesBase64:base64(r.sourceBytes),syntheticOnly:true})}const data={format:"PAE06-CP082-SYNTHETIC-EXPORT-ONLY",version:1,clinicalAuthority:false,docs};const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="PAE06_CP082_SYNTHETIC_EXPORT.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);good("Учебная копия сформирована. Проверьте загрузки iPhone. Восстановление доступно на отдельном TEST-экране.")}catch(e){good("Экспорт не выполнен: "+e.message,true)}}
 
 /* CP08.7: identifiers reflect the LOADED JS, not the server's newest release. */
-const RUNTIME_BUILD=Object.freeze({version:"v0.8.25-test.0",checkpoint:"CP08.25",buildId:"20261122-cp0825-navigation-01",channel:"TEST"});
+const RUNTIME_BUILD=Object.freeze({version:"v0.8.25-test.1",checkpoint:"CP08.27",buildId:"20261123-01",channel:"TEST"});
 let versionCheckBusy=false,lastVersionCheck=0;
 function paintRuntimeBuild(){
  $("versionText").textContent=`TEST ${RUNTIME_BUILD.version} · ${RUNTIME_BUILD.checkpoint}`;
@@ -87,7 +87,7 @@ function isReleaseMetadata(value){
   value.app==="PAE-06 Medical Archive PWA"&&value.channel==="TEST"&&value.syntheticOnly===true&&
   typeof value.version==="string"&&/^v[0-9]+\.[0-9]+\.[0-9]+-test\.[0-9]+$/.test(value.version)&&
   typeof value.checkpoint==="string"&&/^CP[0-9]{2}\.[0-9]+$/.test(value.checkpoint)&&
-  typeof value.buildId==="string"&&/^[0-9]{8}-[0-9]{2}$/.test(value.buildId);
+  typeof value.buildId==="string"&&/^[0-9]{8}-(?:[0-9]{2}|cp[0-9]{4}-[a-z0-9]+-[0-9]{2})$/.test(value.buildId);
 }
 async function checkLatestBuild(){
  if(versionCheckBusy)return;
