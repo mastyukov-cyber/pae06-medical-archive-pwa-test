@@ -1,0 +1,46 @@
+name: PAE-06 CP08.30 Node26 negative provenance one-shot
+
+on:
+  push:
+    branches:
+      - pilot/pae06-cp0830-node26-once-20261124-01
+    paths:
+      - .github/workflows/pae06-cp0830-node26-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  qa-b-negative-source-provenance:
+    if: github.event.before == '52ab684394ac576bf50a41d127b656e23017d323'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact triggering commit without saved credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Resolve Node.js 26 without package installation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: ''
+      - name: Verify Node major and unchanged CP08.30 sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p 'process.versions.node.split(".")[0]')" = '26'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0830-source-provenance/missing-source-binding.negative.test.mjs)" = 'a6d7796b39168be69737e1f173c817ca0c78ee0c'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0830-source-provenance/source-provenance-gate.mjs)" = '3c380bcc1dbfe704060689242c46d6e8b6562b8e'
+          test "$(git rev-parse HEAD:qa-hub/candidates/cp0822-bplus-contract/data-source.mjs)" = 'a487b61135e56202ecf3fc2880dc86e48dfe1f35'
+          test "$(git rev-parse HEAD:mac-derived-adapter.mjs)" = 'f9c0d43ba0467bbd1beeb435d6b7d1373eb4e771'
+          test "$(grep -c '^test(' qa-hub/candidates/cp0830-source-provenance/missing-source-binding.negative.test.mjs)" = '1'
+          test -z "$(git -c core.fsmonitor=false status --porcelain=v1 --untracked-files=all)"
+          printf 'PASS_CP0830_SOURCE_PREFLIGHT\n'
+      - name: Run ONLY the new synthetic negative test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-concurrency=1 --test-reporter=tap 'qa-hub/candidates/cp0830-source-provenance/missing-source-binding.negative.test.mjs'
+          printf 'PASS_CP0830_NODE26_NEGATIVE_ONE_TEST\n'
